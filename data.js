@@ -9,7 +9,6 @@
 const STATUSSEN = [
   "Lead",
   "Showroombezoek",
-  "Thuismeting",
   "Offerte",
   "Onderhandeling",
   "Besteld",
@@ -24,7 +23,8 @@ const SHOWROOMS = ["Geel", "Mol", "Herentals"];
 const MIGRATIE_MAP = {
   "Aanvraag":           "Lead",
   "Gesprek 1 Gepland":  "Showroombezoek",
-  "Ontwerp":            "Thuismeting",
+  "Ontwerp":            "Offerte",
+  "Thuismeting":        "Offerte",
   "Gesprek 2 Gepland":  "Offerte",
   "Opvolging":          "Onderhandeling",
   "Verkocht":           "Besteld",
@@ -110,7 +110,7 @@ const FK_DATA = (() => {
       budget: "Ruim budget",
       materialen: "massief eik, natuursteen, eiland",
       volgende_actie: "2026-06-03T14:00",
-      status: "Thuismeting",
+      status: "Offerte",
       orderMaand: "",
       taken: [
         { id: "taak-003a", titel: "Plattegrond ophalen van architect", vervaldatum: "2026-05-28", afgerond: false, adviseur: "Kevin Leclercq", aangemaakt: "2026-05-06T11:00:00.000Z" }
