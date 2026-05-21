@@ -327,18 +327,29 @@ function KanbanKolom({ status, records, onKlik, onDragStart, onDrop }) {
   );
 }
 
+const TAAK_TYPES = [
+  { id: "offerte",  label: "Offerte-opvolging" },
+  { id: "ontwerp",  label: "Ontwerp maken + keuken uitrekenen" },
+  { id: "afspraak", label: "Nieuwe afspraak inplannen" },
+  { id: "email",    label: "E-mail verzenden" },
+  { id: "vrij",     label: "Vrije ingave" },
+];
+
 function TakenSectie({ record, onRefresh, onToast }) {
-  const [nieuweTitel,   setNieuweTitel]   = useState("");
+  const [nieuwType,     setNieuwType]     = useState("offerte");
+  const [vrijeTekst,    setVrijeTekst]    = useState("");
   const [nieuweDatum,   setNieuweDatum]   = useState("");
   const [tonenAfgerond, setTonenAfgerond] = useState(false);
   const taken    = record.taken||[];
   const open     = taken.filter(t=>!t.afgerond);
   const afgerond = taken.filter(t=> t.afgerond);
   const voegToe = () => {
-    if (!nieuweTitel.trim()) return;
-    const r = FK_DATA.addTask(record.id,{titel:nieuweTitel.trim(),vervaldatum:nieuweDatum});
-    if (!r.ok) { onToast({type:"fout",bericht:r.error}); return; }
-    setNieuweTitel(""); setNieuweDatum(""); onRefresh();
+    const typeObj = TAAK_TYPES.find(t => t.id === nieuwType);
+    const titel = nieuwType === "vrij" ? vrijeTekst.trim() : typeObj.label;
+    if (!titel) return;
+    const r = FK_DATA.addTask(record.id, { titel, type: nieuwType, vervaldatum: nieuweDatum });
+    if (!r.ok) { onToast({ type: "fout", bericht: r.error }); return; }
+    setVrijeTekst(""); setNieuweDatum(""); onRefresh();
   };
   const toggleAfgerond = (id,huidig) => {
     const r = FK_DATA.updateTask(record.id,id,{afgerond:!huidig});
@@ -356,13 +367,21 @@ function TakenSectie({ record, onRefresh, onToast }) {
         {open.length > 0 && <span className="taken-badge-open">{open.length} open</span>}
       </div>
       <div className="taak-invoer-rij">
-        <input className="fk-input" type="text" value={nieuweTitel}
-          onChange={e=>setNieuweTitel(e.target.value)} placeholder="Nieuwe taak…"
-          onKeyDown={e=>{if(e.key==="Enter")voegToe();}} />
+        <select className="fk-input fk-select" value={nieuwType} onChange={e => setNieuwType(e.target.value)}>
+          {TAAK_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+        </select>
         <input className="fk-input fk-input-smal" type="date" value={nieuweDatum}
           onChange={e=>setNieuweDatum(e.target.value)} title="Vervaldatum" />
-        <button className="btn btn-primary btn-sm" onClick={voegToe} disabled={!nieuweTitel.trim()}>+</button>
+        <button className="btn btn-primary btn-sm" onClick={voegToe}
+          disabled={nieuwType === "vrij" && !vrijeTekst.trim()}>+</button>
       </div>
+      {nieuwType === "vrij" && (
+        <div style={{ marginBottom: "8px" }}>
+          <input className="fk-input" type="text" value={vrijeTekst}
+            onChange={e => setVrijeTekst(e.target.value)} placeholder="Beschrijf de taak…"
+            onKeyDown={e => { if (e.key === "Enter") voegToe(); }} />
+        </div>
+      )}
       {open.length===0&&afgerond.length===0&&<p className="logboek-leeg">Geen taken. Voeg er één toe hierboven.</p>}
       {open.map(t => (
         <div key={t.id} className="taak-item">

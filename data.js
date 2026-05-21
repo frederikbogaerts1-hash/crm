@@ -430,7 +430,7 @@ const FK_DATA = (() => {
     const idx = all.findIndex(r => r.id === dossierId);
     if (idx === -1) return { ok: false, error: "Dossier niet gevonden." };
     const nieuweTaak = {
-      id: newId(), titel: taak.titel || "", vervaldatum: taak.vervaldatum || "",
+      id: newId(), titel: taak.titel || "", type: taak.type || "", vervaldatum: taak.vervaldatum || "",
       afgerond: false, adviseur: taak.adviseur || "", aangemaakt: new Date().toISOString()
     };
     all[idx] = { ...all[idx], taken: [...(all[idx].taken || []), nieuweTaak] };
