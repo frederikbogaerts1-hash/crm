@@ -27,6 +27,8 @@
   <script src="vendor/babel.min.js"></script>
   <!-- Data laag -->
   <script src="data.js"></script>
+  <!-- Belgische postcodes -->
+  <script src="postcodes-be.js"></script>
   <!-- Veiligheidsnet: toon foutmelding als een library niet geladen is -->
   <script>
     (function () {
@@ -58,6 +60,19 @@
 
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const UI_VERSION = "2.0";
+
+const computeNaam = (v) => {
+  const p1 = [(v.voornaam1||"").trim(), (v.familienaam1||"").trim()].filter(Boolean).join(" ");
+  const p2 = (v.voornaam2||"").trim() || (v.familienaam2||"").trim()
+    ? [(v.voornaam2||"").trim(), (v.familienaam2||"").trim()].filter(Boolean).join(" ")
+    : "";
+  return p2 ? `${p1} & ${p2}` : p1;
+};
+const computeAdres = (v) => {
+  const straatNr = [(v.straat||"").trim(), (v.huisnummer||"").trim()].filter(Boolean).join(" ");
+  const pcStad   = [(v.postcode||"").trim(), (v.stad||"").trim()].filter(Boolean).join(" ");
+  return [straatNr, pcStad].filter(Boolean).join(", ");
+};
 
 const IcoPlusCircle = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -378,14 +393,44 @@ function TakenSectie({ record, onRefresh, onToast }) {
 }
 
 function TabOverzicht({ record, velden, wijzig, veldFouten, opgeslagen, overtijdStatus, toonOrderMaand, onSlaOp, onVerwijder }) {
+  const [toonP2, setToonP2] = useState(!!(velden.voornaam2 || velden.familienaam2));
+  const autoFillStad = (pc) => {
+    if (pc.length >= 4 && window.FK_POSTCODES && window.FK_POSTCODES[pc]) {
+      wijzig("stad", window.FK_POSTCODES[pc]);
+    }
+  };
   return (
     <div className="tab-overzicht">
-      <div className="veld-groep">
-        <label className="veld-label" htmlFor="s-naam">Naam *</label>
-        <input id="s-naam" className={`fk-input ${veldFouten.naam?"fk-input-fout":""}`}
-          value={velden.naam} onChange={e=>wijzig("naam",e.target.value)} placeholder="Voor- en achternaam" />
-        {veldFouten.naam && <p className="veld-fout">{veldFouten.naam}</p>}
+      <div className="veld-rij">
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-vn1">Voornaam</label>
+          <input id="s-vn1" className="fk-input"
+            value={velden.voornaam1} onChange={e=>wijzig("voornaam1",e.target.value)} placeholder="Voornaam" />
+        </div>
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-fn1">Familienaam *</label>
+          <input id="s-fn1" className={`fk-input ${veldFouten.familienaam1?"fk-input-fout":""}`}
+            value={velden.familienaam1} onChange={e=>wijzig("familienaam1",e.target.value)} placeholder="Familienaam" />
+          {veldFouten.familienaam1 && <p className="veld-fout">{veldFouten.familienaam1}</p>}
+        </div>
       </div>
+      {!toonP2
+        ? <button type="button" className="btn btn-ghost btn-sm" style={{marginBottom:"8px"}} onClick={()=>setToonP2(true)}>+ Tweede persoon</button>
+        : (
+          <div className="veld-rij">
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="s-vn2">Voornaam 2</label>
+              <input id="s-vn2" className="fk-input"
+                value={velden.voornaam2} onChange={e=>wijzig("voornaam2",e.target.value)} placeholder="Voornaam (optioneel)" />
+            </div>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="s-fn2">Familienaam 2</label>
+              <input id="s-fn2" className="fk-input"
+                value={velden.familienaam2} onChange={e=>wijzig("familienaam2",e.target.value)} placeholder="Familienaam (optioneel)" />
+            </div>
+          </div>
+        )
+      }
       <div className="veld-rij">
         <div className="veld-groep">
           <label className="veld-label" htmlFor="s-tel">Telefoon</label>
@@ -398,10 +443,30 @@ function TabOverzicht({ record, velden, wijzig, veldFouten, opgeslagen, overtijd
             onChange={e=>wijzig("email",e.target.value)} placeholder="naam@email.be" />
         </div>
       </div>
-      <div className="veld-groep">
-        <label className="veld-label" htmlFor="s-adres">Adres</label>
-        <input id="s-adres" className="fk-input" value={velden.adres}
-          onChange={e=>wijzig("adres",e.target.value)} placeholder="Straat nr, Gemeente" />
+      <div className="veld-rij">
+        <div className="veld-groep" style={{flex:2}}>
+          <label className="veld-label" htmlFor="s-straat">Straat</label>
+          <input id="s-straat" className="fk-input" value={velden.straat}
+            onChange={e=>wijzig("straat",e.target.value)} placeholder="Straatnaam" />
+        </div>
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-huisnr">Nr.</label>
+          <input id="s-huisnr" className="fk-input" value={velden.huisnummer}
+            onChange={e=>wijzig("huisnummer",e.target.value)} placeholder="Nr." />
+        </div>
+      </div>
+      <div className="veld-rij">
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-postcode">Postcode</label>
+          <input id="s-postcode" className="fk-input" value={velden.postcode}
+            onChange={e=>{wijzig("postcode",e.target.value);autoFillStad(e.target.value);}}
+            placeholder="2440" maxLength={4} />
+        </div>
+        <div className="veld-groep" style={{flex:2}}>
+          <label className="veld-label" htmlFor="s-stad">Gemeente</label>
+          <input id="s-stad" className="fk-input" value={velden.stad}
+            onChange={e=>wijzig("stad",e.target.value)} placeholder="Gemeente" />
+        </div>
       </div>
       <div className="veld-rij">
         <div className="veld-groep">
@@ -713,6 +778,14 @@ function DetailSidebar({ recordId, records, onSluit, onRefresh, onToast, onVerwi
   useEffect(() => {
     if (record) {
       setVelden({
+        voornaam1:    record.voornaam1    || "",
+        familienaam1: record.familienaam1 || (record.naam || ""),
+        voornaam2:    record.voornaam2    || "",
+        familienaam2: record.familienaam2 || "",
+        straat:       record.straat       || "",
+        huisnummer:   record.huisnummer   || "",
+        postcode:     record.postcode     || "",
+        stad:         record.stad         || "",
         naam:record.naam||"", telefoon:record.telefoon||"", email:record.email||"",
         adres:record.adres||"", adviseur:record.adviseur||"", showroom:record.showroom||"",
         bron:record.bron||"Web", offerteprijs:record.offerteprijs||"", budget:record.budget||"",
@@ -727,8 +800,12 @@ function DetailSidebar({ recordId, records, onSluit, onRefresh, onToast, onVerwi
 
   const wijzig = (veld,waarde) => { setVelden(v=>({...v,[veld]:waarde})); setVeldFouten(f=>({...f,[veld]:""})); };
   const slaOp = () => {
-    if (!velden.naam.trim()) { setVeldFouten({naam:"Naam is verplicht."}); return; }
-    const r = FK_DATA.update(record.id,velden);
+    const f = {};
+    if (!velden.familienaam1.trim()) f.familienaam1 = "Familienaam is verplicht.";
+    if (Object.keys(f).length > 0) { setVeldFouten(f); return; }
+    const naam  = computeNaam(velden);
+    const adres = computeAdres(velden);
+    const r = FK_DATA.update(record.id, { ...velden, naam, adres });
     if (!r.ok) { onToast({type:"fout",bericht:r.error}); return; }
     setOpgeslagen(true); setTimeout(()=>setOpgeslagen(false),2000); onRefresh();
   };
@@ -797,22 +874,42 @@ function DetailSidebar({ recordId, records, onSluit, onRefresh, onToast, onVerwi
 }
 
 function NieuwDossierModal({ onSluit, onOpslaan, onOpenBestaand, onToast }) {
-  const [velden, setVelden] = useState({naam:"",telefoon:"",email:"",adres:"",adviseur:"",showroom:"",bron:"Web",volgende_actie:"",status:"Lead"});
+  const [velden, setVelden] = useState({
+    voornaam1:"", familienaam1:"", voornaam2:"", familienaam2:"",
+    straat:"", huisnummer:"", postcode:"", stad:"",
+    telefoon:"", email:"",
+    adviseur:"", showroom:"", bron:"Web", volgende_actie:"", status:"Lead"
+  });
+  const [toonP2,     setToonP2]     = useState(false);
   const [fouten,     setFouten]     = useState({});
   const [duplicaten, setDuplicaten] = useState([]);
+
   const wijzig = (veld,waarde) => { setVelden(v=>({...v,[veld]:waarde})); setFouten(f=>({...f,[veld]:""})); };
-  const checkDuplicaten = (email,telefoon,adres) => {
-    if (!email&&!telefoon&&!adres) { setDuplicaten([]); return; }
-    setDuplicaten(FK_DATA.findDuplicates(email,telefoon,adres));
+
+  const checkDups = (overrides={}) => {
+    const v = {...velden,...overrides};
+    const adres = computeAdres(v);
+    if (!v.email && !v.telefoon && !adres) { setDuplicaten([]); return; }
+    setDuplicaten(FK_DATA.findDuplicates(v.email, v.telefoon, adres));
   };
+
+  const autoFillStad = (pc) => {
+    if (pc.length >= 4 && window.FK_POSTCODES && window.FK_POSTCODES[pc]) {
+      wijzig("stad", window.FK_POSTCODES[pc]);
+    }
+  };
+
   const slaOp = () => {
-    const f={};
-    if (!velden.naam.trim()) f.naam="Naam is verplicht.";
-    if (Object.keys(f).length>0) { setFouten(f); return; }
-    const r=FK_DATA.add(velden);
+    const f = {};
+    if (!velden.familienaam1.trim()) f.familienaam1 = "Familienaam is verplicht.";
+    if (Object.keys(f).length > 0) { setFouten(f); return; }
+    const naam  = computeNaam(velden);
+    const adres = computeAdres(velden);
+    const r = FK_DATA.add({ ...velden, naam, adres });
     if (!r.ok) { onToast({type:"fout",bericht:r.error}); return; }
     onOpslaan(r.record.id);
   };
+
   return (
     <div className="modal-backdrop" onClick={onSluit}>
       <div className="modal" onClick={e=>e.stopPropagation()}>
@@ -821,32 +918,74 @@ function NieuwDossierModal({ onSluit, onOpslaan, onOpenBestaand, onToast }) {
           <button className="btn-icoon-rond" onClick={onSluit}><IcoX /></button>
         </div>
         <div className="modal-inhoud">
-          <div className="veld-groep">
-            <label className="veld-label" htmlFor="n-naam">Naam *</label>
-            <input id="n-naam" className={`fk-input ${fouten.naam?"fk-input-fout":""}`}
-              value={velden.naam} onChange={e=>wijzig("naam",e.target.value)}
-              placeholder="Voor- en achternaam of gezinsnaam" autoFocus />
-            {fouten.naam && <p className="veld-fout">{fouten.naam}</p>}
+          <div className="veld-rij">
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="n-vn1">Voornaam</label>
+              <input id="n-vn1" className="fk-input" value={velden.voornaam1}
+                onChange={e=>wijzig("voornaam1",e.target.value)} placeholder="Voornaam" autoFocus />
+            </div>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="n-fn1">Familienaam *</label>
+              <input id="n-fn1" className={`fk-input ${fouten.familienaam1?"fk-input-fout":""}`}
+                value={velden.familienaam1} onChange={e=>wijzig("familienaam1",e.target.value)} placeholder="Familienaam" />
+              {fouten.familienaam1 && <p className="veld-fout">{fouten.familienaam1}</p>}
+            </div>
           </div>
+          {!toonP2
+            ? <button type="button" className="btn btn-ghost btn-sm" style={{marginBottom:"8px"}} onClick={()=>setToonP2(true)}>+ Tweede persoon</button>
+            : (
+              <div className="veld-rij">
+                <div className="veld-groep">
+                  <label className="veld-label" htmlFor="n-vn2">Voornaam 2</label>
+                  <input id="n-vn2" className="fk-input" value={velden.voornaam2}
+                    onChange={e=>wijzig("voornaam2",e.target.value)} placeholder="Voornaam (optioneel)" />
+                </div>
+                <div className="veld-groep">
+                  <label className="veld-label" htmlFor="n-fn2">Familienaam 2</label>
+                  <input id="n-fn2" className="fk-input" value={velden.familienaam2}
+                    onChange={e=>wijzig("familienaam2",e.target.value)} placeholder="Familienaam (optioneel)" />
+                </div>
+              </div>
+            )
+          }
           <div className="veld-rij">
             <div className="veld-groep">
               <label className="veld-label" htmlFor="n-tel">Telefoon</label>
               <input id="n-tel" className="fk-input" value={velden.telefoon}
                 onChange={e=>wijzig("telefoon",e.target.value)}
-                onBlur={e=>checkDuplicaten(velden.email,e.target.value,velden.adres)} placeholder="0477 00 00 00" />
+                onBlur={e=>checkDups({telefoon:e.target.value})} placeholder="0477 00 00 00" />
             </div>
             <div className="veld-groep">
               <label className="veld-label" htmlFor="n-email">E-mail</label>
               <input id="n-email" type="email" className="fk-input" value={velden.email}
                 onChange={e=>wijzig("email",e.target.value)}
-                onBlur={e=>checkDuplicaten(e.target.value,velden.telefoon,velden.adres)} placeholder="naam@email.be" />
+                onBlur={e=>checkDups({email:e.target.value})} placeholder="naam@email.be" />
             </div>
           </div>
-          <div className="veld-groep">
-            <label className="veld-label" htmlFor="n-adres">Adres</label>
-            <input id="n-adres" className="fk-input" value={velden.adres}
-              onChange={e=>wijzig("adres",e.target.value)}
-              onBlur={e=>checkDuplicaten(velden.email,velden.telefoon,e.target.value)} placeholder="Straat nr, Gemeente" />
+          <div className="veld-rij">
+            <div className="veld-groep" style={{flex:2}}>
+              <label className="veld-label" htmlFor="n-straat">Straat</label>
+              <input id="n-straat" className="fk-input" value={velden.straat}
+                onChange={e=>wijzig("straat",e.target.value)} placeholder="Straatnaam" />
+            </div>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="n-huisnr">Nr.</label>
+              <input id="n-huisnr" className="fk-input" value={velden.huisnummer}
+                onChange={e=>wijzig("huisnummer",e.target.value)} placeholder="Nr." />
+            </div>
+          </div>
+          <div className="veld-rij">
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="n-postcode">Postcode</label>
+              <input id="n-postcode" className="fk-input" value={velden.postcode}
+                onChange={e=>{wijzig("postcode",e.target.value);autoFillStad(e.target.value);}}
+                placeholder="2440" maxLength={4} />
+            </div>
+            <div className="veld-groep" style={{flex:2}}>
+              <label className="veld-label" htmlFor="n-stad">Gemeente</label>
+              <input id="n-stad" className="fk-input" value={velden.stad}
+                onChange={e=>wijzig("stad",e.target.value)} placeholder="Gemeente" />
+            </div>
           </div>
           {duplicaten.length > 0 && (
             <div className="duplicaat-waarschuwing">

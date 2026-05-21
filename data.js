@@ -46,6 +46,8 @@ const FK_DATA = (() => {
     {
       id: "mock-001",
       naam: "Lieve en Marc Wouters",
+      voornaam1: "Lieve", familienaam1: "Wouters", voornaam2: "Marc", familienaam2: "Wouters",
+      straat: "Diestseweg", huisnummer: "45", postcode: "2440", stad: "Geel",
       telefoon: "0477 12 34 56",
       email: "wouters.lieve@telenet.be",
       adres: "Diestseweg 45, Geel",
@@ -71,6 +73,8 @@ const FK_DATA = (() => {
     {
       id: "mock-002",
       naam: "Ria Verheyen",
+      voornaam1: "Ria", familienaam1: "Verheyen", voornaam2: "", familienaam2: "",
+      straat: "Kerkstraat", huisnummer: "12", postcode: "2200", stad: "Herentals",
       telefoon: "014 67 89 01",
       email: "ria.verheyen@gmail.com",
       adres: "Kerkstraat 12, Herentals",
@@ -94,6 +98,8 @@ const FK_DATA = (() => {
     {
       id: "mock-003",
       naam: "Fam. Cools-Hermans",
+      voornaam1: "", familienaam1: "Cools-Hermans", voornaam2: "", familienaam2: "",
+      straat: "Nieuwbouwlaan", huisnummer: "8", postcode: "2440", stad: "Geel",
       telefoon: "0468 55 44 33",
       email: "jan.cools@skynet.be",
       adres: "Nieuwbouwlaan 8, Geel",
@@ -118,6 +124,8 @@ const FK_DATA = (() => {
     {
       id: "mock-004",
       naam: "Werner Aerts",
+      voornaam1: "Werner", familienaam1: "Aerts", voornaam2: "", familienaam2: "",
+      straat: "Molseweg", huisnummer: "3", postcode: "2400", stad: "Mol",
       telefoon: "0485 98 76 54",
       email: "w.aerts@proximus.be",
       adres: "Molseweg 3, Mol",
@@ -141,6 +149,8 @@ const FK_DATA = (() => {
     {
       id: "mock-005",
       naam: "Sofie en Thomas Bogaerts",
+      voornaam1: "Sofie", familienaam1: "Bogaerts", voornaam2: "Thomas", familienaam2: "Bogaerts",
+      straat: "Leopoldlaan", huisnummer: "22", postcode: "2200", stad: "Herentals",
       telefoon: "0474 11 22 33",
       email: "sofie.bogaerts@gmail.com",
       adres: "Leopoldlaan 22, Herentals",
@@ -165,6 +175,8 @@ const FK_DATA = (() => {
     {
       id: "mock-006",
       naam: "Mia Janssen",
+      voornaam1: "Mia", familienaam1: "Janssen", voornaam2: "", familienaam2: "",
+      straat: "Beekstraat", huisnummer: "7", postcode: "2400", stad: "Mol",
       telefoon: "013 44 55 66",
       email: "mia.janssen@telenet.be",
       adres: "Beekstraat 7, Mol",
@@ -187,6 +199,8 @@ const FK_DATA = (() => {
     {
       id: "mock-007",
       naam: "Patrick en Els Nijs",
+      voornaam1: "Patrick", familienaam1: "Nijs", voornaam2: "Els", familienaam2: "Nijs",
+      straat: "Geelseweg", huisnummer: "15", postcode: "2400", stad: "Mol",
       telefoon: "0479 66 77 88",
       email: "patrick.nijs@outlook.com",
       adres: "Geelseweg 15, Mol",
@@ -313,6 +327,8 @@ const FK_DATA = (() => {
   /* ── Migratie ──────────────────────────────────────────────── */
   const migreer = (records) => records.map(r => ({
     adres: "", adviseur: "", showroom: "", taken: [], orderMaand: "", bestanden: [],
+    voornaam1: "", familienaam1: "", voornaam2: "", familienaam2: "",
+    straat: "", huisnummer: "", postcode: "", stad: "",
     ...r,
     status: MIGRATIE_MAP[r.status] || (STATUSSEN.includes(r.status) ? r.status : "Lead")
   }));
@@ -352,6 +368,8 @@ const FK_DATA = (() => {
     const all = getAllRaw();
     const nieuw = {
       id: newId(), naam: "", telefoon: "", email: "", adres: "",
+      voornaam1: "", familienaam1: "", voornaam2: "", familienaam2: "",
+      straat: "", huisnummer: "", postcode: "", stad: "",
       adviseur: "", showroom: "", bron: "Web", offerteprijs: "",
       budget: "", materialen: "", volgende_actie: "", status: "Lead",
       orderMaand: "", taken: [], bestanden: [], aangemaakt: new Date().toISOString(), logboek: [],
