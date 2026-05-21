@@ -1789,11 +1789,16 @@ select.filter-select {
    ANALYSE — pipeline overzicht + stat uitbreiding
    ════════════════════════════════════════════════════════════ */
 .stat-rij {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
 }
 
 .stat-getal-taken {
   color: var(--waarschuwing);
+}
+
+.stat-getal-geld {
+  font-size: 2.2rem;
+  color: var(--accent);
 }
 
 .pipeline-overzicht {

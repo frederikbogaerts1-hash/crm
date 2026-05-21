@@ -1280,6 +1280,7 @@ function AnalyseScreen({ records, walkins, onWalkin, onToast }) {
   const walkinsDezeMaand  = FK_DATA.walkinsDezeMaand(walkins);
   const dossiersDezeMaand = FK_DATA.dossiersDezeMaand(records);
   const totaalBesteld = records.filter(r=>["Besteld","Geïnstalleerd","Service"].includes(r.status)).length;
+  const totaalVerkocht= records.filter(r=>["Besteld","Geïnstalleerd","Service"].includes(r.status)).reduce((s,r)=>s+(r.offerteprijs||0),0);
   const openTaken     = records.reduce((acc,r)=>acc+(r.taken||[]).filter(t=>!t.afgerond).length,0);
   const handleWalkin = () => { const r=FK_DATA.addWalkin(); if(!r.ok) onToast({type:"fout",bericht:r.error}); else onWalkin(); };
   return (
@@ -1290,6 +1291,7 @@ function AnalyseScreen({ records, walkins, onWalkin, onToast }) {
           <div className="stat-blok"><div className="stat-getal">{dossiersDezeMaand}</div><div className="stat-label">Nieuwe dossiers deze maand</div></div>
           <div className="stat-blok"><div className="stat-getal">{walkinsDezeMaand}</div><div className="stat-label">Walk-ins deze maand</div></div>
           <div className="stat-blok"><div className="stat-getal">{totaalBesteld}</div><div className="stat-label">Bestellingen (totaal)</div></div>
+          <div className="stat-blok"><div className="stat-getal stat-getal-geld">{FK_DATA.fmtEuro(totaalVerkocht)||"€ 0"}</div><div className="stat-label">Totaal verkocht</div></div>
           <div className="stat-blok"><div className="stat-getal stat-getal-taken">{openTaken}</div><div className="stat-label">Open taken</div></div>
         </div>
       </section>
