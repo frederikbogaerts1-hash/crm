@@ -399,6 +399,12 @@ function TabOverzicht({ record, velden, wijzig, veldFouten, opgeslagen, overtijd
       wijzig("stad", window.FK_POSTCODES[pc]);
     }
   };
+  const autoFillPostcode = (stad) => {
+    if (!stad.trim() || velden.postcode || !window.FK_POSTCODES) return;
+    const q = stad.trim().toLowerCase();
+    const hit = Object.entries(window.FK_POSTCODES).find(([,v]) => v.toLowerCase() === q);
+    if (hit) wijzig("postcode", hit[0]);
+  };
   return (
     <div className="tab-overzicht">
       <div className="veld-rij">
@@ -465,7 +471,8 @@ function TabOverzicht({ record, velden, wijzig, veldFouten, opgeslagen, overtijd
         <div className="veld-groep" style={{flex:2}}>
           <label className="veld-label" htmlFor="s-stad">Gemeente</label>
           <input id="s-stad" className="fk-input" value={velden.stad}
-            onChange={e=>wijzig("stad",e.target.value)} placeholder="Gemeente" />
+            onChange={e=>wijzig("stad",e.target.value)}
+            onBlur={e=>autoFillPostcode(e.target.value)} placeholder="Gemeente" />
         </div>
       </div>
       <div className="veld-rij">
@@ -898,6 +905,12 @@ function NieuwDossierModal({ onSluit, onOpslaan, onOpenBestaand, onToast }) {
       wijzig("stad", window.FK_POSTCODES[pc]);
     }
   };
+  const autoFillPostcodeModal = (stad) => {
+    if (!stad.trim() || velden.postcode || !window.FK_POSTCODES) return;
+    const q = stad.trim().toLowerCase();
+    const hit = Object.entries(window.FK_POSTCODES).find(([,v]) => v.toLowerCase() === q);
+    if (hit) wijzig("postcode", hit[0]);
+  };
 
   const slaOp = () => {
     const f = {};
@@ -984,7 +997,8 @@ function NieuwDossierModal({ onSluit, onOpslaan, onOpenBestaand, onToast }) {
             <div className="veld-groep" style={{flex:2}}>
               <label className="veld-label" htmlFor="n-stad">Gemeente</label>
               <input id="n-stad" className="fk-input" value={velden.stad}
-                onChange={e=>wijzig("stad",e.target.value)} placeholder="Gemeente" />
+                onChange={e=>wijzig("stad",e.target.value)}
+                onBlur={e=>autoFillPostcodeModal(e.target.value)} placeholder="Gemeente" />
             </div>
           </div>
           {duplicaten.length > 0 && (
