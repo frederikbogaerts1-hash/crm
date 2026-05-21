@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Franssen Keukens — Verkoopadministratie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="loading">
+    <div class="loading-inner">
+      <div class="loading-wordmark">Franssen Keukens</div>
+      <div class="loading-sub">Laden…</div>
+    </div>
+  </div>
+  <div id="root"></div>
+
+  <!-- SheetJS — laadt vóór React -->
+  <script src="vendor/xlsx.bundle.min.js"></script>
+  <!-- React 18 production -->
+  <script src="vendor/react.production.min.js"></script>
+  <script src="vendor/react-dom.production.min.js"></script>
+  <!-- Babel (JSX in browser) -->
+  <script src="vendor/babel.min.js"></script>
+  <!-- Data laag -->
+  <script src="data.js"></script>
+  <!-- Veiligheidsnet: toon foutmelding als een library niet geladen is -->
+  <script>
+    (function () {
+      var ontbrekend = [];
+      if (typeof React === "undefined")    ontbrekend.push("React");
+      if (typeof ReactDOM === "undefined") ontbrekend.push("ReactDOM");
+      if (typeof Babel === "undefined")    ontbrekend.push("Babel");
+      if (typeof XLSX === "undefined")     ontbrekend.push("XLSX");
+      if (typeof FK_DATA === "undefined")  ontbrekend.push("FK_DATA (data.js)");
+      if (ontbrekend.length) {
+        var el = document.getElementById("loading");
+        if (el) el.innerHTML =
+          '<div class="loading-inner">' +
+          '<div class="loading-wordmark">Franssen Keukens</div>' +
+          '<div class="loading-sub" style="color:#b00;font-size:14px;margin-top:12px">App kon niet starten.<br>Ontbrekend: ' +
+          ontbrekend.join(", ") +
+          '.<br>Controleer of de map <strong>vendor/</strong> aanwezig is naast index.html.</div>' +
+          '</div>';
+      }
+    })();
+  </script>
+  <!-- App (inline om file://-protocol te ondersteunen) -->
+  <script type="text/babel">
+/* ============================================================
+   FRANSSEN KEUKENS — CRM v3.1 (STEP 2: Dossier 4-tab UI)
+   React 18 + Babel standalone · Geen build-stap
+   Data via window.FK_DATA (data.js)
+   ============================================================ */
+
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+const UI_VERSION = "2.0";
+
+const IcoPlusCircle = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+  </svg>
+);
+const IcoX = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+const IcoDownload = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+);
+const IcoUpload = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+  </svg>
+);
+const IcoLogout = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+);
+const IcoSearch = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+);
+const IcoCheck = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+const IcoList = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+    <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+    <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+  </svg>
+);
+const IcoKanban = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="11" rx="1"/>
+  </svg>
+);
+
+function Toast({ toast, onDismiss }) {
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(onDismiss, 2500);
+    return () => clearTimeout(t);
+  }, [toast]);
+  if (!toast) return null;
+  return <div className={`toast toast-${toast.type}`} onClick={onDismiss}>{toast.bericht}</div>;
+}
+
+function ConfirmDialog({ confirm, onAnnuleer }) {
+  if (!confirm) return null;
+  return (
+    <div className="modal-backdrop" onClick={onAnnuleer}>
+      <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
+        <h3 className="confirm-titel">{confirm.titel}</h3>
+        <p className="confirm-bericht">{confirm.bericht}</p>
+        <div className="confirm-knoppen">
+          <button className="btn btn-secondary" onClick={onAnnuleer}>Annuleren</button>
+          <button className="btn btn-gevaar" onClick={confirm.onBevestig}>{confirm.bevestigLabel || "Bevestigen"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const slug = (status || "")
+    .toLowerCase()
+    .replace(/[àáâãä]/g,"a").replace(/[èéêë]/g,"e")
+    .replace(/[ìíîï]/g,"i").replace(/[òóôõö]/g,"o").replace(/[ùúûü]/g,"u")
+    .replace(/[^a-z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
+  return <span className={`status-badge status-${slug}`}>{status}</span>;
+}
+
+function LoginScreen({ onLogin }) {
+  const [ww, setWw]     = useState("");
+  const [fout, setFout] = useState("");
+  const submit = (e) => {
+    e.preventDefault();
+    if (FK_DATA.checkPassword(ww)) { FK_DATA.setAuthenticated(); onLogin(); }
+    else { setFout("Fout wachtwoord. Probeer het opnieuw."); setWw(""); }
+  };
+  return (
+    <div className="login-scherm">
+      <div className="login-kaart">
+        <div className="login-logo">
+          <span className="login-logo-franssen">Franssen</span>
+          <span className="login-logo-keukens"> Keukens</span>
+        </div>
+        <p className="login-subtitel">Verkoopadministratie</p>
+        <form onSubmit={submit}>
+          <div className="veld-groep">
+            <label className="veld-label" htmlFor="wachtwoord">Wachtwoord</label>
+            <input id="wachtwoord" type="password" className="fk-input" value={ww}
+              onChange={e => { setWw(e.target.value); setFout(""); }}
+              placeholder="Voer het wachtwoord in" autoFocus />
+            {fout && <p className="veld-fout">{fout}</p>}
+          </div>
+          <button type="submit" className="btn btn-primary btn-volledig">Aanmelden</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function GlobalSearch({ onSluit, onOpenDossier }) {
+  const [query, setQuery]           = useState("");
+  const [resultaten, setResultaten] = useState([]);
+  const inputRef = useRef(null);
+  useEffect(() => {
+    inputRef.current && inputRef.current.focus();
+    const onKey = (e) => { if (e.key === "Escape") onSluit(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+  useEffect(() => {
+    if (query.trim().length >= 2) setResultaten(FK_DATA.search(query));
+    else setResultaten([]);
+  }, [query]);
+  return (
+    <div className="search-overlay" onClick={onSluit}>
+      <div className="search-container" onClick={e => e.stopPropagation()}>
+        <div className="search-invoer-wrapper">
+          <IcoSearch />
+          <input ref={inputRef} className="search-input-groot" type="text" value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Zoek op naam, telefoon, e-mail, adres of dossier-ID…" />
+          <button className="btn-icoon-rond" onClick={onSluit} title="Sluiten"><IcoX /></button>
+        </div>
+        {query.trim().length >= 2 && (
+          <div className="search-resultaten">
+            {resultaten.length === 0
+              ? <div className="search-geen-resultaat">Geen dossiers gevonden voor "{query}".</div>
+              : resultaten.map(r => (
+                  <div key={r.id} className="search-resultaat-item"
+                    onClick={() => { onOpenDossier(r.id); onSluit(); }}>
+                    <div className="search-resultaat-naam">{r.naam}</div>
+                    <div className="search-resultaat-meta">
+                      <StatusBadge status={r.status} />
+                      {r.adviseur && <span>{r.adviseur}</span>}
+                      {r.telefoon && <span>{r.telefoon}</span>}
+                      {r.adres    && <span>{r.adres}</span>}
+                    </div>
+                  </div>
+                ))
+            }
+          </div>
+        )}
+        {query.trim().length < 2 && (
+          <div className="search-hint">Typ minimaal 2 tekens om te zoeken · Druk Escape om te sluiten</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Nav({ tab, onTabChange, onNieuw, onExport, onImport, onLogout, onSearch }) {
+  const fileRef = useRef(null);
+  return (
+    <nav className="nav">
+      <div className="nav-merk">
+        <span className="nav-franssen">Franssen</span>
+        <span className="nav-keukens"> Keukens</span>
+        <span className="nav-crm">CRM</span>
+      </div>
+      <div className="nav-tabs">
+        <button className={`nav-tab ${tab==="kanban"  ? "nav-tab-actief":""}`} onClick={() => onTabChange("kanban")}>Pipeline</button>
+        <button className={`nav-tab ${tab==="vandaag" ? "nav-tab-actief":""}`} onClick={() => onTabChange("vandaag")}>Vandaag</button>
+        <button className={`nav-tab ${tab==="analyse" ? "nav-tab-actief":""}`} onClick={() => onTabChange("analyse")}>Analyse</button>
+      </div>
+      <div className="nav-acties">
+        <button className="btn btn-secondary btn-sm btn-icoon" onClick={onSearch} title="Zoeken (Ctrl+K)"><IcoSearch /></button>
+        <button className="btn btn-primary btn-sm" onClick={onNieuw}><IcoPlusCircle /> Nieuw dossier</button>
+        <button className="btn btn-secondary btn-sm btn-icoon" onClick={onExport} title="Excel exporteren"><IcoDownload /></button>
+        <button className="btn btn-secondary btn-sm btn-icoon"
+          onClick={() => fileRef.current && fileRef.current.click()} title="Excel importeren"><IcoUpload /></button>
+        <input ref={fileRef} type="file" accept=".xlsx" style={{display:"none"}} onChange={onImport} />
+        <button className="btn btn-ghost btn-sm btn-icoon" onClick={onLogout} title="Afmelden"><IcoLogout /></button>
+      </div>
+    </nav>
+  );
+}
+
+function KlantKaart({ record, onKlik, onDragStart }) {
+  const overtijdStatus = FK_DATA.isOvertijd(record.volgende_actie);
+  const openTaken = (record.taken||[]).filter(t=>!t.afgerond).length;
+  return (
+    <div className={`klant-kaart ${overtijdStatus==="overtijd"?"kaart-overtijd":""}`}
+      draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";onDragStart(record.id);}} onClick={onKlik}>
+      <div className="kaart-header">
+        <div className="kaart-naam">{record.naam}</div>
+        {openTaken > 0 && <span className="kaart-taken-badge" title={`${openTaken} open taak${openTaken>1?"en":""}`}>{openTaken}</span>}
+      </div>
+      <div className="kaart-meta">
+        {record.adviseur && <span className="kaart-adviseur">{record.adviseur.split(" ")[0]}</span>}
+        {record.showroom  && <span className="kaart-bron">{record.showroom}</span>}
+        {!record.adviseur && record.bron && <span className="kaart-bron">{record.bron}</span>}
+      </div>
+      {record.offerteprijs && <div className="kaart-prijs">{record.offerteprijs}</div>}
+      {record.volgende_actie && (
+        <div className={`kaart-datum kaart-datum-${overtijdStatus}`}>
+          {overtijdStatus==="overtijd"&&"⚠ "}{overtijdStatus==="vandaag"&&"📅 "}{overtijdStatus==="toekomst"&&"⏰ "}
+          {FK_DATA.fmtDatetime(record.volgende_actie)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function KanbanKolom({ status, records, onKlik, onDragStart, onDrop }) {
+  const [dragOver, setDragOver] = useState(false);
+  const kolomKlasse = useMemo(() => {
+    if (["Besteld","Geïnstalleerd","Service"].includes(status)) return "kolom-besteld";
+    if (status==="Verloren") return "kolom-verloren";
+    return "";
+  }, [status]);
+  return (
+    <div className={["kanban-kolom",kolomKlasse,dragOver?"kolom-drag-over":""].filter(Boolean).join(" ")}
+      onDragOver={e=>{e.preventDefault();setDragOver(true);}}
+      onDragLeave={()=>setDragOver(false)}
+      onDrop={()=>{setDragOver(false);onDrop(status);}}>
+      <div className="kolom-header">
+        <span className="kolom-titel">{status}</span>
+        <span className="kolom-teller">{records.length}</span>
+      </div>
+      <div className="kolom-kaarten">
+        {records.map(r => <KlantKaart key={r.id} record={r} onKlik={()=>onKlik(r.id)} onDragStart={onDragStart} />)}
+      </div>
+    </div>
+  );
+}
+
+function TakenSectie({ record, onRefresh, onToast }) {
+  const [nieuweTitel,   setNieuweTitel]   = useState("");
+  const [nieuweDatum,   setNieuweDatum]   = useState("");
+  const [tonenAfgerond, setTonenAfgerond] = useState(false);
+  const taken    = record.taken||[];
+  const open     = taken.filter(t=>!t.afgerond);
+  const afgerond = taken.filter(t=> t.afgerond);
+  const voegToe = () => {
+    if (!nieuweTitel.trim()) return;
+    const r = FK_DATA.addTask(record.id,{titel:nieuweTitel.trim(),vervaldatum:nieuweDatum});
+    if (!r.ok) { onToast({type:"fout",bericht:r.error}); return; }
+    setNieuweTitel(""); setNieuweDatum(""); onRefresh();
+  };
+  const toggleAfgerond = (id,huidig) => {
+    const r = FK_DATA.updateTask(record.id,id,{afgerond:!huidig});
+    if (!r.ok) onToast({type:"fout",bericht:r.error}); else onRefresh();
+  };
+  const verwijder = (id) => {
+    const r = FK_DATA.deleteTask(record.id,id);
+    if (!r.ok) onToast({type:"fout",bericht:r.error}); else onRefresh();
+  };
+  const isLaat = (v) => { if(!v) return false; const d=new Date(v);d.setHours(0,0,0,0); const n=new Date();n.setHours(0,0,0,0); return d<n; };
+  return (
+    <div className="taken-sectie">
+      <div className="taken-header">
+        <h3 className="sidebar-sectie-titel">Taken</h3>
+        {open.length > 0 && <span className="taken-badge-open">{open.length} open</span>}
+      </div>
+      <div className="taak-invoer-rij">
+        <input className="fk-input" type="text" value={nieuweTitel}
+          onChange={e=>setNieuweTitel(e.target.value)} placeholder="Nieuwe taak…"
+          onKeyDown={e=>{if(e.key==="Enter")voegToe();}} />
+        <input className="fk-input fk-input-smal" type="date" value={nieuweDatum}
+          onChange={e=>setNieuweDatum(e.target.value)} title="Vervaldatum" />
+        <button className="btn btn-primary btn-sm" onClick={voegToe} disabled={!nieuweTitel.trim()}>+</button>
+      </div>
+      {open.length===0&&afgerond.length===0&&<p className="logboek-leeg">Geen taken. Voeg er één toe hierboven.</p>}
+      {open.map(t => (
+        <div key={t.id} className="taak-item">
+          <button className="taak-checkbox" onClick={()=>toggleAfgerond(t.id,t.afgerond)} title="Markeer als afgerond" />
+          <div className="taak-info">
+            <span className="taak-titel">{t.titel}</span>
+            {t.vervaldatum && <span className={`taak-datum ${isLaat(t.vervaldatum)?"taak-datum-laat":""}`}>{FK_DATA.fmtDate(t.vervaldatum)}</span>}
+          </div>
+          <button className="taak-verwijder btn-icoon-rond" onClick={()=>verwijder(t.id)} title="Verwijder"><IcoX /></button>
+        </div>
+      ))}
+      {afgerond.length > 0 && (
+        <div className="taken-afgerond-sectie">
+          <button className="taken-toon-afgerond" onClick={()=>setTonenAfgerond(v=>!v)}>
+            {tonenAfgerond?"▲ Verberg":"▼ Toon"} afgeronde taken ({afgerond.length})
+          </button>
+          {tonenAfgerond && afgerond.map(t => (
+            <div key={t.id} className="taak-item taak-item-afgerond">
+              <button className="taak-checkbox taak-checkbox-aan" onClick={()=>toggleAfgerond(t.id,t.afgerond)}><IcoCheck /></button>
+              <div className="taak-info"><span className="taak-titel">{t.titel}</span></div>
+              <button className="taak-verwijder btn-icoon-rond" onClick={()=>verwijder(t.id)}><IcoX /></button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabOverzicht({ record, velden, wijzig, veldFouten, opgeslagen, overtijdStatus, toonOrderMaand, onSlaOp, onVerwijder }) {
+  return (
+    <div className="tab-overzicht">
+      <div className="veld-groep">
+        <label className="veld-label" htmlFor="s-naam">Naam *</label>
+        <input id="s-naam" className={`fk-input ${veldFouten.naam?"fk-input-fout":""}`}
+          value={velden.naam} onChange={e=>wijzig("naam",e.target.value)} placeholder="Voor- en achternaam" />
+        {veldFouten.naam && <p className="veld-fout">{veldFouten.naam}</p>}
+      </div>
+      <div className="veld-rij">
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-tel">Telefoon</label>
+          <input id="s-tel" className="fk-input" value={velden.telefoon}
+            onChange={e=>wijzig("telefoon",e.target.value)} placeholder="0477 00 00 00" />
+        </div>
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-email">E-mail</label>
+          <input id="s-email" type="email" className="fk-input" value={velden.email}
+            onChange={e=>wijzig("email",e.target.value)} placeholder="naam@email.be" />
+        </div>
+      </div>
+      <div className="veld-groep">
+        <label className="veld-label" htmlFor="s-adres">Adres</label>
+        <input id="s-adres" className="fk-input" value={velden.adres}
+          onChange={e=>wijzig("adres",e.target.value)} placeholder="Straat nr, Gemeente" />
+      </div>
+      <div className="veld-rij">
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-adviseur">Adviseur</label>
+          <select id="s-adviseur" className="fk-input" value={velden.adviseur} onChange={e=>wijzig("adviseur",e.target.value)}>
+            <option value="">— kies —</option>
+            {ADVISEURS.map(a=><option key={a}>{a}</option>)}
+          </select>
+        </div>
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-showroom">Showroom</label>
+          <select id="s-showroom" className="fk-input" value={velden.showroom} onChange={e=>wijzig("showroom",e.target.value)}>
+            <option value="">— kies —</option>
+            {SHOWROOMS.map(s=><option key={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="veld-rij">
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-bron">Bron</label>
+          <select id="s-bron" className="fk-input" value={velden.bron} onChange={e=>wijzig("bron",e.target.value)}>
+            {["Web","Telefoon","Toonzaal","Walk-in","Doorverwijzing"].map(b=><option key={b}>{b}</option>)}
+          </select>
+        </div>
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-status">Status</label>
+          <select id="s-status" className="fk-input" value={velden.status} onChange={e=>wijzig("status",e.target.value)}>
+            {STATUSSEN.map(s=><option key={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="veld-groep">
+        <label className="veld-label" htmlFor="s-prijs">Offerteprijs</label>
+        <input id="s-prijs" className="fk-input" value={velden.offerteprijs}
+          onChange={e=>wijzig("offerteprijs",e.target.value)} placeholder="bv. € 12.500 – 15.000" />
+      </div>
+      <div className="veld-rij">
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-budget">Budget</label>
+          <input id="s-budget" className="fk-input" value={velden.budget}
+            onChange={e=>wijzig("budget",e.target.value)} placeholder="bv. tot € 15.000" />
+        </div>
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-mat">Materialen</label>
+          <input id="s-mat" className="fk-input" value={velden.materialen}
+            onChange={e=>wijzig("materialen",e.target.value)} placeholder="bv. eik, composiet" />
+        </div>
+      </div>
+      <div className="veld-groep">
+        <label className={`veld-label ${overtijdStatus==="overtijd"?"veld-label-overtijd":""}`} htmlFor="s-volgende">
+          Volgende actie
+          {overtijdStatus==="overtijd" && <span className="overtijd-badge"> ⚠ Overtijd!</span>}
+        </label>
+        <input id="s-volgende" type="datetime-local"
+          className={`fk-input ${overtijdStatus==="overtijd"?"fk-input-overtijd":""}`}
+          value={velden.volgende_actie} onChange={e=>wijzig("volgende_actie",e.target.value)} />
+      </div>
+      {toonOrderMaand && (
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-ordermaand">Besteldmaand</label>
+          <input id="s-ordermaand" type="month" className="fk-input" value={velden.orderMaand}
+            onChange={e=>wijzig("orderMaand",e.target.value)} />
+        </div>
+      )}
+      <div className="sidebar-acties-rij">
+        <button className="btn btn-primary" onClick={onSlaOp}>{opgeslagen?"✓ Opgeslagen":"Opslaan"}</button>
+        <button className="btn btn-gevaar-outline" onClick={()=>onVerwijder(record.id)}>Verwijderen</button>
+      </div>
+    </div>
+  );
+}
+
+function bestandIcoon(type) {
+  if (!type) return "📎";
+  if (type === "application/pdf") return "📄";
+  if (type.startsWith("image/")) return "🖼";
+  if (type.includes("spreadsheet") || type.includes("excel") || type.includes("csv")) return "📊";
+  if (type.includes("word") || type.includes("document")) return "📝";
+  return "📎";
+}
+
+function TabBestanden({ record, onRefresh, onToast }) {
+  const [dragOver,     setDragOver]     = useState(false);
+  const [bezig,        setBezig]        = useState(false);
+  const [confirmDel,   setConfirmDel]   = useState(null);
+  const [hernoem,      setHernoem]      = useState(null);
+  const [hernoemWaarde,setHernoemWaarde]= useState("");
+  const fileRef = useRef(null);
+
+  const bestanden = record.bestanden || [];
+
+  const verwerkBestanden = async (files) => {
+    if (!files || files.length === 0) return;
+    setBezig(true);
+    let aantalOk = 0;
+    for (const file of Array.from(files)) {
+      const r = await FK_DATA.addFile(record.id, file);
+      if (!r.ok) { onToast({ type: "fout", bericht: r.error }); }
+      else { aantalOk++; }
+    }
+    if (aantalOk > 0) {
+      onToast({ type: "succes", bericht: aantalOk === 1 ? "Bestand toegevoegd." : `${aantalOk} bestanden toegevoegd.` });
+      onRefresh();
+    }
+    setBezig(false);
+  };
+
+  const openBestand = async (meta) => {
+    const blob = await FK_DATA.getFileBlob(meta.id);
+    if (!blob) { onToast({ type: "fout", bericht: "Bestand niet gevonden. Mogelijk verwijderd of op een ander apparaat geüpload." }); return; }
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  };
+
+  const downloadBestand = async (meta) => {
+    const blob = await FK_DATA.getFileBlob(meta.id);
+    if (!blob) { onToast({ type: "fout", bericht: "Bestand niet gevonden." }); return; }
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement("a");
+    a.href = url; a.download = meta.naam; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  };
+
+  const startHernoem = (meta) => { setHernoem(meta.id); setHernoemWaarde(meta.naam); };
+  const slaHernoemOp = (fileId) => {
+    if (!hernoemWaarde.trim()) return;
+    const r = FK_DATA.renameFile(record.id, fileId, hernoemWaarde.trim());
+    if (!r.ok) onToast({ type: "fout", bericht: r.error });
+    else { onToast({ type: "succes", bericht: "Naam gewijzigd." }); onRefresh(); }
+    setHernoem(null);
+  };
+
+  const verwijderBestand = (meta) => {
+    setConfirmDel({
+      titel: "Bestand verwijderen?",
+      bericht: `"${meta.naam}" wordt permanent verwijderd uit dit dossier.`,
+      bevestigLabel: "Ja, verwijderen",
+      onBevestig: async () => {
+        const r = await FK_DATA.deleteFile(record.id, meta.id);
+        if (!r.ok) onToast({ type: "fout", bericht: r.error });
+        else { onToast({ type: "succes", bericht: "Bestand verwijderd." }); onRefresh(); }
+        setConfirmDel(null);
+      }
+    });
+  };
+
+  return (
+    <div className="tab-bestanden">
+      <div
+        className={`dropzone ${dragOver ? "dropzone-actief" : ""} ${bezig ? "dropzone-bezig" : ""}`}
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={e => { e.preventDefault(); setDragOver(false); verwerkBestanden(e.dataTransfer.files); }}
+        onClick={() => !bezig && fileRef.current && fileRef.current.click()}
+      >
+        <div className="dropzone-icoon">{bezig ? "⏳" : "📁"}</div>
+        <p className="dropzone-tekst">{bezig ? "Bezig met uploaden…" : "Sleep bestanden hierheen of klik om te kiezen"}</p>
+        <p className="dropzone-sub">PDF-plannen, stuklijsten, afbeeldingen — max 25 MB per bestand</p>
+        <input ref={fileRef} type="file" multiple style={{ display: "none" }}
+          onChange={e => { verwerkBestanden(e.target.files); e.target.value = ""; }} />
+      </div>
+
+      {bestanden.length > 0 && (
+        <div className="bestanden-lijst">
+          {[...bestanden].reverse().map(meta => (
+            <div key={meta.id} className="bestand-rij">
+              <div className="bestand-icoon">{bestandIcoon(meta.type)}</div>
+              <div className="bestand-info">
+                {hernoem === meta.id ? (
+                  <div className="hernoem-invoer-rij">
+                    <input className="fk-input fk-input-sm" value={hernoemWaarde}
+                      autoFocus
+                      onChange={e => setHernoemWaarde(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") slaHernoemOp(meta.id); if (e.key === "Escape") setHernoem(null); }} />
+                    <button className="btn btn-primary btn-sm" onClick={() => slaHernoemOp(meta.id)}>Opslaan</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setHernoem(null)}>Annuleer</button>
+                  </div>
+                ) : (
+                  <div className="bestand-naam">{meta.naam}</div>
+                )}
+                <div className="bestand-meta">
+                  {FK_DATA.fmtBytes(meta.grootte)} · {FK_DATA.fmtDatum(meta.geupload)}
+                </div>
+              </div>
+              <div className="bestand-acties">
+                <button className="btn btn-secondary btn-sm" onClick={() => openBestand(meta)}>Open</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => downloadBestand(meta)}>Download</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => startHernoem(meta)}>Hernoemen</button>
+                <button className="btn btn-gevaar-outline btn-sm" onClick={() => verwijderBestand(meta)}>Verwijder</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {bestanden.length === 0 && !bezig && (
+        <p className="logboek-leeg">Nog geen bestanden in dit dossier.</p>
+      )}
+
+      {(record.offerteprijs || record.materialen) && (
+        <div className="offerte-samenvatting">
+          {record.offerteprijs && (<><div className="veld-label">Offerteprijs (huidig)</div><div className="offerte-prijs-groot">{record.offerteprijs}</div></>)}
+          {record.budget     && <div className="offerte-budget">Budget: {record.budget}</div>}
+          {record.materialen && <div className="offerte-materialen">{record.materialen}</div>}
+        </div>
+      )}
+
+      {confirmDel && <ConfirmDialog confirm={confirmDel} onAnnuleer={() => setConfirmDel(null)} />}
+    </div>
+  );
+}
+
+function TabBezoeken({ record, onRefresh, onToast }) {
+  const [type,  setType]  = useState("notitie");
+  const [tekst, setTekst] = useState("");
+  const CONTACT_TYPES = [
+    {value:"notitie",label:"📝 Notitie"},
+    {value:"showroombezoek",label:"🏠 Showroombezoek"},
+    {value:"thuismeting",label:"📐 Thuismeting"},
+    {value:"telefonisch",label:"📞 Telefonisch contact"},
+    {value:"voicemail",label:"📞 Voicemail ingesproken"},
+  ];
+  const slaOp = () => {
+    if (!tekst.trim()) return;
+    const r = FK_DATA.addLogEntry(record.id, type, tekst.trim());
+    if (!r.ok) { onToast({type:"fout",bericht:r.error}); return; }
+    setTekst(""); onRefresh();
+  };
+  const ICOON = {showroombezoek:"🏠",thuismeting:"📐",telefonisch:"📞",voicemail:"📞",notitie:"📝"};
+  return (
+    <div className="tab-bezoeken">
+      <div className="bezoek-invoer">
+        <select className="fk-input" value={type} onChange={e=>setType(e.target.value)}>
+          {CONTACT_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+        <textarea className="fk-textarea" value={tekst} onChange={e=>setTekst(e.target.value)}
+          placeholder="Wat werd besproken of afgesproken?" rows={3} />
+        <button className="btn btn-primary" onClick={slaOp} disabled={!tekst.trim()}>Toevoegen</button>
+      </div>
+      <div className="logboek-entries">
+        {(record.logboek||[]).length===0 && <p className="logboek-leeg">Nog geen contactmomenten geregistreerd.</p>}
+        {(record.logboek||[]).slice().reverse().map((entry,i) => (
+          <div key={i} className={`logboek-entry logboek-${entry.type}`}>
+            <div className="entry-meta">
+              <span className="entry-icon">{ICOON[entry.type]||"📝"}</span>
+              <span className="entry-datum">{FK_DATA.fmtDatetime(entry.timestamp)}</span>
+            </div>
+            <div className="entry-tekst">{entry.tekst}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TabTakenNotities({ record, onRefresh, onToast }) {
+  const [logTekst, setLogTekst] = useState("");
+  const slaNotitieOp = () => {
+    if (!logTekst.trim()) return;
+    const r = FK_DATA.addLogEntry(record.id,"notitie",logTekst.trim());
+    if (!r.ok) { onToast({type:"fout",bericht:r.error}); return; }
+    setLogTekst(""); onRefresh();
+  };
+  const voicemail = () => {
+    const r = FK_DATA.addLogEntry(record.id,"voicemail","Voicemail ingesproken");
+    if (!r.ok) onToast({type:"fout",bericht:r.error}); else onRefresh();
+  };
+  const notities = (record.logboek||[]).filter(e=>e.type==="notitie"||e.type==="voicemail").slice().reverse();
+  return (
+    <div className="tab-taken-notities">
+      <TakenSectie record={record} onRefresh={onRefresh} onToast={onToast} />
+      <hr className="sidebar-divider" />
+      <div className="notitie-sectie">
+        <h3 className="sidebar-sectie-titel">Notities &amp; opvolging</h3>
+        <div className="logboek-invoer">
+          <textarea className="fk-textarea" value={logTekst} onChange={e=>setLogTekst(e.target.value)}
+            placeholder="Schrijf hier een notitie…" rows={3} />
+          <div className="logboek-knoppen">
+            <button className="btn btn-voicemail" onClick={voicemail}>📞 Voicemail</button>
+            <button className="btn btn-primary" onClick={slaNotitieOp} disabled={!logTekst.trim()}>Notitie opslaan</button>
+          </div>
+        </div>
+        <div className="logboek-entries">
+          {notities.length===0 && <p className="logboek-leeg">Nog geen notities.</p>}
+          {notities.map((entry,i) => (
+            <div key={i} className={`logboek-entry logboek-${entry.type}`}>
+              <div className="entry-meta">
+                <span className="entry-icon">{entry.type==="voicemail"?"📞":"📝"}</span>
+                <span className="entry-datum">{FK_DATA.fmtDatetime(entry.timestamp)}</span>
+              </div>
+              <div className="entry-tekst">{entry.tekst}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailSidebar({ recordId, records, onSluit, onRefresh, onToast, onVerwijder }) {
+  const record = records.find(r => r.id === recordId);
+  const [activeTab,     setActiveTab]     = useState("overzicht");
+  const [velden,        setVelden]        = useState({});
+  const [opgeslagen,    setOpgeslagen]    = useState(false);
+  const [veldFouten,    setVeldFouten]    = useState({});
+  const [showChangelog, setShowChangelog] = useState(() => localStorage.getItem("fk_ui_version") !== UI_VERSION);
+
+  useEffect(() => {
+    if (record) {
+      setVelden({
+        naam:record.naam||"", telefoon:record.telefoon||"", email:record.email||"",
+        adres:record.adres||"", adviseur:record.adviseur||"", showroom:record.showroom||"",
+        bron:record.bron||"Web", offerteprijs:record.offerteprijs||"", budget:record.budget||"",
+        materialen:record.materialen||"", volgende_actie:record.volgende_actie||"",
+        orderMaand:record.orderMaand||"", status:record.status||"Lead"
+      });
+      setVeldFouten({}); setOpgeslagen(false);
+    }
+  }, [recordId]);
+
+  if (!record) return null;
+
+  const wijzig = (veld,waarde) => { setVelden(v=>({...v,[veld]:waarde})); setVeldFouten(f=>({...f,[veld]:""})); };
+  const slaOp = () => {
+    if (!velden.naam.trim()) { setVeldFouten({naam:"Naam is verplicht."}); return; }
+    const r = FK_DATA.update(record.id,velden);
+    if (!r.ok) { onToast({type:"fout",bericht:r.error}); return; }
+    setOpgeslagen(true); setTimeout(()=>setOpgeslagen(false),2000); onRefresh();
+  };
+
+  const overtijdStatus = FK_DATA.isOvertijd(velden.volgende_actie);
+  const toonOrderMaand = ["Besteld","Geïnstalleerd","Service"].includes(velden.status);
+  const TABS = [
+    {id:"overzicht",label:"Overzicht"},
+    {id:"bestanden",label:"Bestanden"},
+    {id:"bezoeken", label:"Bezoeken"},
+    {id:"taken",    label:"Taken & Notities"}
+  ];
+
+  return (
+    <>
+      <div className="sidebar-backdrop" onClick={onSluit} />
+      <div className="sidebar open">
+        <div className="sidebar-header">
+          <div className="sidebar-naam">{record.naam||"Dossier"}</div>
+          <div className="sidebar-header-acties">
+            <StatusBadge status={record.status} />
+            <button className="btn-icoon-rond" onClick={onSluit} title="Sluiten"><IcoX /></button>
+          </div>
+        </div>
+
+        {showChangelog && (
+          <div className="changelog-banner">
+            <div className="changelog-inhoud">
+              <strong>Wat is er nieuw?</strong>
+              <ul className="changelog-lijst">
+                <li>Dossier heeft nu 4 tabbladen</li>
+                <li>Bezoeken en contactmomenten op eigen tabblad</li>
+                <li>Taken en notities op eigen tabblad</li>
+              </ul>
+            </div>
+            <button className="btn-icoon-rond" title="Sluiten" onClick={()=>{
+              localStorage.setItem("fk_ui_version",UI_VERSION); setShowChangelog(false);
+            }}><IcoX /></button>
+          </div>
+        )}
+
+        <div className="dossier-tabs-nav">
+          {TABS.map(t => (
+            <button key={t.id}
+              className={`dossier-tab-knop ${activeTab===t.id?"dossier-tab-knop-actief":""}`}
+              onClick={()=>setActiveTab(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="dossier-tab-inhoud">
+          {activeTab==="overzicht" && (
+            <TabOverzicht record={record} velden={velden} wijzig={wijzig}
+              veldFouten={veldFouten} opgeslagen={opgeslagen}
+              overtijdStatus={overtijdStatus} toonOrderMaand={toonOrderMaand}
+              onSlaOp={slaOp} onVerwijder={onVerwijder} />
+          )}
+          {activeTab==="bestanden" && <TabBestanden record={record} onRefresh={onRefresh} onToast={onToast} />}
+          {activeTab==="bezoeken"  && <TabBezoeken  record={record} onRefresh={onRefresh} onToast={onToast} />}
+          {activeTab==="taken"     && <TabTakenNotities record={record} onRefresh={onRefresh} onToast={onToast} />}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function NieuwDossierModal({ onSluit, onOpslaan, onOpenBestaand, onToast }) {
+  const [velden, setVelden] = useState({naam:"",telefoon:"",email:"",adres:"",adviseur:"",showroom:"",bron:"Web",volgende_actie:"",status:"Lead"});
+  const [fouten,     setFouten]     = useState({});
+  const [duplicaten, setDuplicaten] = useState([]);
+  const wijzig = (veld,waarde) => { setVelden(v=>({...v,[veld]:waarde})); setFouten(f=>({...f,[veld]:""})); };
+  const checkDuplicaten = (email,telefoon,adres) => {
+    if (!email&&!telefoon&&!adres) { setDuplicaten([]); return; }
+    setDuplicaten(FK_DATA.findDuplicates(email,telefoon,adres));
+  };
+  const slaOp = () => {
+    const f={};
+    if (!velden.naam.trim()) f.naam="Naam is verplicht.";
+    if (Object.keys(f).length>0) { setFouten(f); return; }
+    const r=FK_DATA.add(velden);
+    if (!r.ok) { onToast({type:"fout",bericht:r.error}); return; }
+    onOpslaan(r.record.id);
+  };
+  return (
+    <div className="modal-backdrop" onClick={onSluit}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-titel">Nieuw dossier</h2>
+          <button className="btn-icoon-rond" onClick={onSluit}><IcoX /></button>
+        </div>
+        <div className="modal-inhoud">
+          <div className="veld-groep">
+            <label className="veld-label" htmlFor="n-naam">Naam *</label>
+            <input id="n-naam" className={`fk-input ${fouten.naam?"fk-input-fout":""}`}
+              value={velden.naam} onChange={e=>wijzig("naam",e.target.value)}
+              placeholder="Voor- en achternaam of gezinsnaam" autoFocus />
+            {fouten.naam && <p className="veld-fout">{fouten.naam}</p>}
+          </div>
+          <div className="veld-rij">
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="n-tel">Telefoon</label>
+              <input id="n-tel" className="fk-input" value={velden.telefoon}
+                onChange={e=>wijzig("telefoon",e.target.value)}
+                onBlur={e=>checkDuplicaten(velden.email,e.target.value,velden.adres)} placeholder="0477 00 00 00" />
+            </div>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="n-email">E-mail</label>
+              <input id="n-email" type="email" className="fk-input" value={velden.email}
+                onChange={e=>wijzig("email",e.target.value)}
+                onBlur={e=>checkDuplicaten(e.target.value,velden.telefoon,velden.adres)} placeholder="naam@email.be" />
+            </div>
+          </div>
+          <div className="veld-groep">
+            <label className="veld-label" htmlFor="n-adres">Adres</label>
+            <input id="n-adres" className="fk-input" value={velden.adres}
+              onChange={e=>wijzig("adres",e.target.value)}
+              onBlur={e=>checkDuplicaten(velden.email,velden.telefoon,e.target.value)} placeholder="Straat nr, Gemeente" />
+          </div>
+          {duplicaten.length > 0 && (
+            <div className="duplicaat-waarschuwing">
+              <strong>⚠ Mogelijk bestaand dossier gevonden:</strong>
+              {duplicaten.map(d => (
+                <div key={d.id} className="duplicaat-item">
+                  <div className="duplicaat-item-info">
+                    <span className="duplicaat-naam">{d.naam}</span>
+                    <StatusBadge status={d.status} />
+                  </div>
+                  <button className="btn btn-sm btn-secondary" onClick={()=>{onOpenBestaand(d.id);onSluit();}}>Open dossier</button>
+                </div>
+              ))}
+              <p className="duplicaat-info">Herken je dit dossier niet? Dan kan je toch een nieuw aanmaken.</p>
+            </div>
+          )}
+          <div className="veld-rij">
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="n-adviseur">Adviseur</label>
+              <select id="n-adviseur" className="fk-input" value={velden.adviseur} onChange={e=>wijzig("adviseur",e.target.value)}>
+                <option value="">— kies —</option>
+                {ADVISEURS.map(a=><option key={a}>{a}</option>)}
+              </select>
+            </div>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="n-showroom">Showroom</label>
+              <select id="n-showroom" className="fk-input" value={velden.showroom} onChange={e=>wijzig("showroom",e.target.value)}>
+                <option value="">— kies —</option>
+                {SHOWROOMS.map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="veld-rij">
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="n-bron">Bron</label>
+              <select id="n-bron" className="fk-input" value={velden.bron} onChange={e=>wijzig("bron",e.target.value)}>
+                {["Web","Telefoon","Toonzaal","Walk-in","Doorverwijzing"].map(b=><option key={b}>{b}</option>)}
+              </select>
+            </div>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="n-volgende">Volgende actie</label>
+              <input id="n-volgende" type="datetime-local" className="fk-input"
+                value={velden.volgende_actie} onChange={e=>wijzig("volgende_actie",e.target.value)} />
+            </div>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onSluit}>Annuleren</button>
+          <button className="btn btn-primary" onClick={slaOp}>Dossier aanmaken</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KanbanScreen({ records, onRefresh, onToast, sidebar, setSidebar }) {
+  const [dragging,       setDragging]       = useState(null);
+  const [confirm,        setConfirm]        = useState(null);
+  const [filterShowroom, setFilterShowroom] = useState("");
+  const [filterAdviseur, setFilterAdviseur] = useState("");
+  const [filterMaand,    setFilterMaand]    = useState("");
+  const [weergave,       setWeergave]       = useState("kanban");
+
+  const gefilterd = useMemo(() => records.filter(r => {
+    if (filterShowroom && r.showroom!==filterShowroom) return false;
+    if (filterAdviseur && r.adviseur!==filterAdviseur) return false;
+    if (filterMaand    && r.aangemaakt.slice(0,7)!==filterMaand) return false;
+    return true;
+  }), [records,filterShowroom,filterAdviseur,filterMaand]);
+
+  const actieveFilters = filterShowroom||filterAdviseur||filterMaand;
+
+  const recordsByStatus = useMemo(() => {
+    const map={};
+    STATUSSEN.forEach(s=>{map[s]=[];});
+    gefilterd.forEach(r=>{ if(map[r.status]) map[r.status].push(r); else map["Lead"].push(r); });
+    return map;
+  }, [gefilterd]);
+
+  const gesorteerdeGefilterd = useMemo(() =>
+    [...gefilterd].sort((a,b)=>new Date(b.aangemaakt)-new Date(a.aangemaakt)), [gefilterd]);
+
+  const handleDrop = (status) => {
+    if (!dragging) return;
+    const r=FK_DATA.update(dragging,{status});
+    if (!r.ok) onToast({type:"fout",bericht:r.error}); else onRefresh();
+    setDragging(null);
+  };
+
+  const handleVerwijder = (id) => {
+    setConfirm({
+      titel:"Dossier verwijderen?",
+      bericht:"Dit dossier en alle bijhorende notities en taken worden permanent verwijderd. Dit kan niet ongedaan worden gemaakt.",
+      bevestigLabel:"Ja, verwijderen",
+      onBevestig:()=>{FK_DATA.delete(id);setSidebar(null);onRefresh();onToast({type:"succes",bericht:"Dossier verwijderd."});setConfirm(null);}
+    });
+  };
+
+  return (
+    <div className="kanban-wrapper">
+      <div className="filter-bar">
+        <select className="filter-select" value={filterShowroom} onChange={e=>setFilterShowroom(e.target.value)}>
+          <option value="">Alle showrooms</option>
+          {SHOWROOMS.map(s=><option key={s}>{s}</option>)}
+        </select>
+        <select className="filter-select" value={filterAdviseur} onChange={e=>setFilterAdviseur(e.target.value)}>
+          <option value="">Alle adviseurs</option>
+          {ADVISEURS.map(a=><option key={a}>{a}</option>)}
+        </select>
+        <input type="month" className="filter-select filter-maand" value={filterMaand}
+          onChange={e=>setFilterMaand(e.target.value)} title="Filter op aanmaakmaand" />
+        {actieveFilters && (
+          <button className="btn btn-ghost btn-sm filter-wis"
+            onClick={()=>{setFilterShowroom("");setFilterAdviseur("");setFilterMaand("");}}>✕ Wis filters</button>
+        )}
+        {actieveFilters && <span className="filter-teller">{gefilterd.length} dossier{gefilterd.length!==1?"s":""}</span>}
+        <div className="filter-bar-spacer" />
+        <div className="weergave-knoppen">
+          <button className={`btn btn-sm btn-icoon ${weergave==="kanban"?"btn-secondary":"btn-ghost"}`}
+            onClick={()=>setWeergave("kanban")} title="Kanban weergave"><IcoKanban /></button>
+          <button className={`btn btn-sm btn-icoon ${weergave==="lijst"?"btn-secondary":"btn-ghost"}`}
+            onClick={()=>setWeergave("lijst")} title="Lijst weergave"><IcoList /></button>
+        </div>
+      </div>
+
+      {weergave==="kanban" && (
+        <div className="kanban-board">
+          {STATUSSEN.map(status => (
+            <KanbanKolom key={status} status={status} records={recordsByStatus[status]||[]}
+              onKlik={id=>setSidebar(id)} onDragStart={id=>setDragging(id)} onDrop={handleDrop} />
+          ))}
+        </div>
+      )}
+
+      {weergave==="lijst" && (
+        <div className="lijst-weergave">
+          {gesorteerdeGefilterd.length===0
+            ? <div className="agenda-leeg">Geen dossiers gevonden.</div>
+            : gesorteerdeGefilterd.map(r => {
+                const ot=(r.taken||[]).filter(t=>!t.afgerond).length;
+                return (
+                  <div key={r.id} className="lijst-rij" onClick={()=>setSidebar(r.id)}>
+                    <div className="lijst-naam">{r.naam}</div>
+                    <StatusBadge status={r.status} />
+                    <div className="lijst-meta">
+                      {r.adviseur    && <span>{r.adviseur}</span>}
+                      {r.showroom    && <span>{r.showroom}</span>}
+                      {r.offerteprijs && <span className="lijst-prijs">{r.offerteprijs}</span>}
+                    </div>
+                    {ot>0 && <span className="lijst-taken-badge">{ot} taak{ot>1?"en":""}</span>}
+                    <span className="lijst-datum">{FK_DATA.fmtDatum(r.aangemaakt)}</span>
+                  </div>
+                );
+              })
+          }
+        </div>
+      )}
+
+      {sidebar && (
+        <DetailSidebar recordId={sidebar} records={records}
+          onSluit={()=>setSidebar(null)} onRefresh={onRefresh}
+          onToast={onToast} onVerwijder={handleVerwijder} />
+      )}
+      {confirm && <ConfirmDialog confirm={confirm} onAnnuleer={()=>setConfirm(null)} />}
+    </div>
+  );
+}
+
+function TodayView({ records, onRefresh, onToast, sidebar, setSidebar }) {
+  const [confirm, setConfirm] = useState(null);
+  const vandaagStart = useMemo(()=>{const d=new Date();d.setHours(0,0,0,0);return d;},[]);
+
+  const afspraken = useMemo(() => records
+    .filter(r=>{if(!r.volgende_actie)return false;const s=FK_DATA.isOvertijd(r.volgende_actie);return s==="vandaag"||s==="overtijd";})
+    .sort((a,b)=>new Date(a.volgende_actie)-new Date(b.volgende_actie)), [records]);
+
+  const openTaken = useMemo(() => records.flatMap(r =>
+    (r.taken||[])
+      .filter(t=>{if(t.afgerond||!t.vervaldatum)return false;const d=new Date(t.vervaldatum);d.setHours(0,0,0,0);return d<=vandaagStart;})
+      .map(t=>({...t,dossierNaam:r.naam,dossierId:r.id}))
+  ), [records]);
+
+  const toggleTaak = (dossierId,taakId,huidig) => {
+    const r=FK_DATA.updateTask(dossierId,taakId,{afgerond:!huidig});
+    if (!r.ok) onToast({type:"fout",bericht:r.error}); else onRefresh();
+  };
+
+  const handleVerwijder = (id) => {
+    setConfirm({
+      titel:"Dossier verwijderen?",bericht:"Dit dossier wordt permanent verwijderd.",bevestigLabel:"Ja, verwijderen",
+      onBevestig:()=>{FK_DATA.delete(id);setSidebar(null);onRefresh();onToast({type:"succes",bericht:"Dossier verwijderd."});setConfirm(null);}
+    });
+  };
+
+  return (
+    <div className="today-view">
+      <div className="today-inhoud">
+        <section className="today-sectie">
+          <h2 className="today-sectie-titel">
+            📅 Afspraken vandaag
+            {afspraken.length>0 && <span className="today-teller">{afspraken.length}</span>}
+          </h2>
+          {afspraken.length===0
+            ? <p className="today-leeg">Geen afspraken vandaag. Goed bezig!</p>
+            : afspraken.map(r => (
+                <div key={r.id} className={`agenda-item agenda-item-${FK_DATA.isOvertijd(r.volgende_actie)}`}
+                  onClick={()=>setSidebar(r.id)}>
+                  <div className="agenda-datum">{FK_DATA.fmtDatetime(r.volgende_actie)}</div>
+                  <div className="agenda-naam">
+                    {r.naam}
+                    {FK_DATA.isOvertijd(r.volgende_actie)==="overtijd" && <span className="today-overtijd-tag"> ⚠ Overtijd</span>}
+                  </div>
+                  <div className="agenda-meta">
+                    <StatusBadge status={r.status} />
+                    {r.adviseur    && <span className="agenda-prijs">{r.adviseur}</span>}
+                    {r.offerteprijs && <span className="agenda-prijs">{r.offerteprijs}</span>}
+                  </div>
+                </div>
+              ))
+          }
+        </section>
+        <section className="today-sectie">
+          <h2 className="today-sectie-titel">
+            ✅ Open taken
+            {openTaken.length>0 && <span className="today-teller today-teller-taken">{openTaken.length}</span>}
+          </h2>
+          {openTaken.length===0
+            ? <p className="today-leeg">Geen openstaande taken. Alles afgewerkt!</p>
+            : openTaken.map(t => (
+                <div key={t.id} className="today-taak-item">
+                  <button className="today-taak-checkbox" onClick={()=>toggleTaak(t.dossierId,t.id,t.afgerond)} title="Markeer als afgerond" />
+                  <div className="today-taak-info">
+                    <span className="today-taak-titel">{t.titel}</span>
+                    <span className="today-taak-dossier" onClick={()=>setSidebar(t.dossierId)}>{t.dossierNaam}</span>
+                  </div>
+                  {t.vervaldatum && <span className="today-taak-datum">{FK_DATA.fmtDate(t.vervaldatum)}</span>}
+                </div>
+              ))
+          }
+        </section>
+      </div>
+      {sidebar && <DetailSidebar recordId={sidebar} records={records} onSluit={()=>setSidebar(null)} onRefresh={onRefresh} onToast={onToast} onVerwijder={handleVerwijder} />}
+      {confirm && <ConfirmDialog confirm={confirm} onAnnuleer={()=>setConfirm(null)} />}
+    </div>
+  );
+}
+
+function AnalyseScreen({ records, walkins, onWalkin, onToast }) {
+  const nu        = new Date();
+  const maandNaam = nu.toLocaleDateString("nl-BE",{month:"long",year:"numeric"});
+  const walkinsDezeMaand  = FK_DATA.walkinsDezeMaand(walkins);
+  const dossiersDezeMaand = FK_DATA.dossiersDezeMaand(records);
+  const totaalBesteld = records.filter(r=>["Besteld","Geïnstalleerd","Service"].includes(r.status)).length;
+  const openTaken     = records.reduce((acc,r)=>acc+(r.taken||[]).filter(t=>!t.afgerond).length,0);
+  const handleWalkin = () => { const r=FK_DATA.addWalkin(); if(!r.ok) onToast({type:"fout",bericht:r.error}); else onWalkin(); };
+  return (
+    <div className="analyse-scherm">
+      <section className="analyse-sectie">
+        <h2 className="analyse-sectie-titel">Maandstatistiek — {maandNaam}</h2>
+        <div className="stat-rij">
+          <div className="stat-blok"><div className="stat-getal">{dossiersDezeMaand}</div><div className="stat-label">Nieuwe dossiers deze maand</div></div>
+          <div className="stat-blok"><div className="stat-getal">{walkinsDezeMaand}</div><div className="stat-label">Walk-ins deze maand</div></div>
+          <div className="stat-blok"><div className="stat-getal">{totaalBesteld}</div><div className="stat-label">Bestellingen (totaal)</div></div>
+          <div className="stat-blok"><div className="stat-getal stat-getal-taken">{openTaken}</div><div className="stat-label">Open taken</div></div>
+        </div>
+      </section>
+      <hr className="analyse-divider" />
+      <section className="analyse-sectie">
+        <h2 className="analyse-sectie-titel">Pipeline overzicht</h2>
+        <div className="pipeline-overzicht">
+          {STATUSSEN.filter(s=>s!=="Verloren").map(s => {
+            const aantal=records.filter(r=>r.status===s).length;
+            return (
+              <div key={s} className="pipeline-rij">
+                <span className="pipeline-status">{s}</span>
+                <div className="pipeline-bar-wrapper">
+                  <div className="pipeline-bar" style={{width:`${Math.min(100,(aantal/Math.max(records.length,1))*100*3)}%`}} />
+                </div>
+                <span className="pipeline-aantal">{aantal}</span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      <hr className="analyse-divider" />
+      <section className="analyse-sectie">
+        <h2 className="analyse-sectie-titel">Walk-in teller</h2>
+        <p className="analyse-uitleg">Klik op de knop elke keer iemand binnenstapt in de toonzaal. Anoniem — er wordt geen dossier aangemaakt.</p>
+        <button className="btn btn-walkin" onClick={handleWalkin}>+1 Walk-in</button>
+        <p className="walkin-totaal">Totaal geregistreerd: <strong>{walkins.length}</strong></p>
+      </section>
+    </div>
+  );
+}
+
+function ImportBevestigingModal({ data, onBevestig, onAnnuleer }) {
+  return (
+    <div className="modal-backdrop" onClick={onAnnuleer}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-titel">Excel importeren</h2>
+          <button className="btn-icoon-rond" onClick={onAnnuleer}><IcoX /></button>
+        </div>
+        <div className="modal-inhoud">
+          <p>Gevonden: <strong>{data.aantal} dossiers</strong> in het Excel-bestand.</p>
+          <div className="import-waarschuwing">
+            <strong>Opgelet:</strong> De huidige data wordt volledig vervangen door de geïmporteerde dossiers. Dit kan niet ongedaan worden gemaakt.
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onAnnuleer}>Annuleren</button>
+          <button className="btn btn-gevaar" onClick={onBevestig}>Ja, importeer {data.aantal} dossiers</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [auth,       setAuth]       = useState(()=>FK_DATA.isAuthenticated());
+  const [tab,        setTab]        = useState("kanban");
+  const [records,    setRecords]    = useState(()=>FK_DATA.getAll());
+  const [walkins,    setWalkins]    = useState(()=>FK_DATA.getWalkins());
+  const [sidebar,    setSidebar]    = useState(null);
+  const [toast,      setToast]      = useState(null);
+  const [nieuwModal, setNieuwModal] = useState(false);
+  const [importData, setImportData] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const refresh   = useCallback(()=>{setRecords(FK_DATA.getAll());setWalkins(FK_DATA.getWalkins());},[]);
+  const showToast = useCallback((t)=>setToast(t),[]);
+
+  useEffect(()=>{
+    const onKey=(e)=>{if((e.ctrlKey||e.metaKey)&&e.key==="k"){e.preventDefault();setSearchOpen(true);}};
+    document.addEventListener("keydown",onKey);
+    return ()=>document.removeEventListener("keydown",onKey);
+  },[]);
+
+  const openDossier = useCallback((id)=>{setTab("kanban");setSidebar(id);},[]);
+
+  const handleLogin    = ()=>setAuth(true);
+  const handleLogout   = ()=>{FK_DATA.logout();setAuth(false);};
+  const handleTabChange = (t)=>{setTab(t);setSidebar(null);};
+
+  const handleExport = ()=>{
+    const r=FK_DATA.exportExcel(records);
+    if (!r.ok) showToast({type:"fout",bericht:r.error}); else showToast({type:"succes",bericht:"Excel gedownload."});
+  };
+
+  const handleImport = (e)=>{
+    const file=e.target.files[0]; if(!file) return; e.target.value="";
+    FK_DATA.importExcel(file).then(data=>setImportData(data)).catch(err=>showToast({type:"fout",bericht:err}));
+  };
+
+  const bevestigImport = ()=>{
+    if(!importData) return;
+    const r=FK_DATA.saveSafe("fransen_crm_data",importData.records);
+    if (!r.ok) showToast({type:"fout",bericht:r.error});
+    else { refresh(); showToast({type:"succes",bericht:`${importData.aantal} dossiers geïmporteerd.`}); }
+    setImportData(null);
+  };
+
+  if (!auth) return <LoginScreen onLogin={handleLogin} />;
+
+  return (
+    <div className="app">
+      <Nav tab={tab} onTabChange={handleTabChange} onNieuw={()=>setNieuwModal(true)}
+        onExport={handleExport} onImport={handleImport} onLogout={handleLogout} onSearch={()=>setSearchOpen(true)} />
+
+      {tab==="kanban"  && <KanbanScreen  records={records} onRefresh={refresh} onToast={showToast} sidebar={sidebar} setSidebar={setSidebar} />}
+      {tab==="vandaag" && <TodayView     records={records} onRefresh={refresh} onToast={showToast} sidebar={sidebar} setSidebar={setSidebar} />}
+      {tab==="analyse" && <AnalyseScreen records={records} walkins={walkins} onWalkin={refresh} onToast={showToast} />}
+
+      {nieuwModal && (
+        <NieuwDossierModal
+          onSluit={()=>setNieuwModal(false)}
+          onOpslaan={(id)=>{setNieuwModal(false);refresh();setTab("kanban");setSidebar(id);showToast({type:"succes",bericht:"Nieuw dossier aangemaakt."});}}
+          onOpenBestaand={openDossier} onToast={showToast} />
+      )}
+      {importData && <ImportBevestigingModal data={importData} onBevestig={bevestigImport} onAnnuleer={()=>setImportData(null)} />}
+      {searchOpen && <GlobalSearch onSluit={()=>setSearchOpen(false)} onOpenDossier={openDossier} />}
+      <Toast toast={toast} onDismiss={()=>setToast(null)} />
+    </div>
+  );
+}
+
+const rootEl    = document.getElementById("root");
+const reactRoot = ReactDOM.createRoot(rootEl);
+reactRoot.render(<App />);
+
+const loadingEl = document.getElementById("loading");
+if (loadingEl) loadingEl.style.display = "none";
+  </script>
+</body>
+</html>

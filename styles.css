@@ -1,0 +1,1991 @@
+/* ============================================================
+   FRANSSEN KEUKENS — CRM v2 STYLESHEET
+   Warm · Premium · Rustig · Tablet-first (768px+)
+   ============================================================ */
+
+/* ─── CSS Variabelen ─────────────────────────────────────── */
+:root {
+  /* Kern */
+  --achtergrond:    #f7f4f0;
+  --wit:            #ffffff;
+  --tekst:          #1e1e1e;
+  --subtiel:        #6b6460;
+  --border:         #d4cdc6;
+  --border-focus:   #2d5016;
+
+  /* Accent */
+  --accent:         #2d5016;
+  --accent-hover:   #3d6b1f;
+  --accent-light:   #e8f0e5;
+
+  /* Goud */
+  --goud:           #8b6f47;
+  --goud-licht:     #f5ede0;
+
+  /* Semantisch */
+  --gevaar:         #c0392b;
+  --gevaar-licht:   #fde8e6;
+  --succes:         #2d5016;
+  --succes-licht:   #e8f0e5;
+  --waarschuwing:   #c17f24;
+  --waarschuwing-licht: #fef9e7;
+
+  /* Kanban */
+  --kolom-bg:       #eeeae5;
+  --kolom-border:   #d4cdc6;
+  --verkocht-bg:    #dfebd9;
+  --verloren-bg:    #e5e3e1;
+
+  /* Typografie */
+  --font-display:   'Cormorant Garamond', Georgia, serif;
+  --font-body:      'Inter', system-ui, sans-serif;
+
+  /* Afmetingen */
+  --nav-hoogte:     62px;
+  --sidebar-breedte: 440px;
+  --radius:         8px;
+  --radius-lg:      12px;
+  --shadow:         0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md:      0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg:      0 8px 32px rgba(0, 0, 0, 0.16);
+}
+
+/* ─── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--achtergrond);
+  color: var(--tekst);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+a { color: var(--accent); }
+
+/* ─── App wrapper ────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BUTTONS
+   ════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease, transform 80ms ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--wit);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: 0 2px 8px rgba(45, 80, 22, 0.3);
+}
+
+.btn-secondary {
+  background: var(--wit);
+  color: var(--tekst);
+  border: 1.5px solid var(--border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--achtergrond);
+  border-color: var(--subtiel);
+}
+
+.btn-gevaar {
+  background: var(--gevaar);
+  color: var(--wit);
+}
+.btn-gevaar:hover:not(:disabled) {
+  background: #a93226;
+}
+
+.btn-gevaar-outline {
+  background: transparent;
+  color: var(--gevaar);
+  border: 1.5px solid var(--gevaar);
+}
+.btn-gevaar-outline:hover:not(:disabled) {
+  background: var(--gevaar-licht);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--subtiel);
+  border: 1.5px solid transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(0,0,0,0.06);
+  color: var(--tekst);
+}
+
+.btn-voicemail {
+  background: var(--goud-licht);
+  color: var(--goud);
+  border: 1.5px solid #d4b896;
+}
+.btn-voicemail:hover:not(:disabled) {
+  background: #ead5b5;
+}
+
+.btn-walkin {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  padding: 20px 32px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: var(--wit);
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: background 150ms ease, box-shadow 150ms ease, transform 80ms ease;
+  box-shadow: var(--shadow);
+  margin: 16px 0;
+}
+.btn-walkin:hover { background: var(--accent-hover); box-shadow: var(--shadow-md); }
+.btn-walkin:active { transform: translateY(2px); }
+
+.btn-sm {
+  padding: 7px 14px;
+  font-size: 0.82rem;
+}
+
+.btn-icoon {
+  padding: 7px 10px;
+}
+
+.btn-volledig {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Icoon-knop (ronde X sluit) */
+.btn-icoon-rond {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--subtiel);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+}
+.btn-icoon-rond:hover {
+  background: rgba(0,0,0,0.07);
+  color: var(--tekst);
+}
+
+/* ════════════════════════════════════════════════════════════
+   FORMULIERVELDEN
+   ════════════════════════════════════════════════════════════ */
+.veld-groep {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.veld-groep:last-child { margin-bottom: 0; }
+
+.veld-rij {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.veld-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--subtiel);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.veld-label-overtijd {
+  color: var(--gevaar);
+}
+
+.fk-input,
+.fk-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  color: var(--tekst);
+  background: var(--wit);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.fk-input:focus,
+.fk-textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.12);
+}
+
+.fk-input-fout {
+  border-color: var(--gevaar) !important;
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.1) !important;
+}
+
+.fk-input-overtijd {
+  border-color: var(--gevaar) !important;
+}
+
+.fk-textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.5;
+}
+
+select.fk-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6460' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.veld-fout {
+  font-size: 0.82rem;
+  color: var(--gevaar);
+  margin-top: 2px;
+}
+
+.inline-fout {
+  background: var(--gevaar-licht);
+  color: var(--gevaar);
+  border: 1px solid #e8a9a3;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.overtijd-badge {
+  color: var(--gevaar);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+/* ════════════════════════════════════════════════════════════
+   STATUS BADGES
+   ════════════════════════════════════════════════════════════ */
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.status-aanvraag         { background: #fef3cd; color: #856404; }
+.status-gesprek-1-gepland { background: #d1ecf1; color: #0c5460; }
+.status-ontwerp          { background: #e2d9f3; color: #4a3080; }
+.status-gesprek-2-gepland { background: #cce5ff; color: #004085; }
+.status-opvolging        { background: #fff3cd; color: #856404; }
+.status-verkocht         { background: #d4edda; color: #155724; }
+.status-verloren         { background: #e2e3e5; color: #383d41; }
+
+/* ════════════════════════════════════════════════════════════
+   LOADING (index.html spinner)
+   ════════════════════════════════════════════════════════════ */
+#loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-family: var(--font-body);
+  color: var(--subtiel);
+  font-size: 1rem;
+}
+
+/* ════════════════════════════════════════════════════════════
+   LOGIN SCREEN
+   ════════════════════════════════════════════════════════════ */
+.login-scherm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--achtergrond);
+  padding: 24px;
+}
+
+.login-kaart {
+  background: var(--wit);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-md);
+}
+
+.login-logo {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: var(--tekst);
+  text-align: center;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.login-logo-keukens {
+  font-style: italic;
+  color: var(--goud);
+}
+
+.login-subtitel {
+  text-align: center;
+  color: var(--subtiel);
+  font-size: 0.88rem;
+  margin-bottom: 32px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.login-titel {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  text-align: center;
+  margin-bottom: 24px;
+  color: var(--tekst);
+}
+
+/* ════════════════════════════════════════════════════════════
+   NAVIGATIE
+   ════════════════════════════════════════════════════════════ */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px;
+  height: var(--nav-hoogte);
+  background: var(--wit);
+  border-bottom: 1.5px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.nav-merk {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--tekst);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.nav-keukens { font-style: italic; color: var(--goud); }
+.nav-crm {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--subtiel);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+}
+
+.nav-tab {
+  padding: 8px 18px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--subtiel);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.nav-tab:hover { background: var(--achtergrond); color: var(--tekst); }
+.nav-tab-actief {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.nav-acties {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   KANBAN BOARD
+   ════════════════════════════════════════════════════════════ */
+.kanban-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.kanban-board {
+  display: flex;
+  gap: 10px;
+  padding: 16px;
+  height: calc(100vh - var(--nav-hoogte));
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+}
+
+.kanban-board::-webkit-scrollbar { height: 6px; }
+.kanban-board::-webkit-scrollbar-track { background: transparent; }
+.kanban-board::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── Kanban Kolom ───────────────────────────────────────── */
+.kanban-kolom {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 230px;
+  min-width: 230px;
+  background: var(--kolom-bg);
+  border: 1.5px solid var(--kolom-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: box-shadow 150ms ease;
+}
+
+.kanban-kolom.kolom-verkocht {
+  background: var(--verkocht-bg);
+  border-color: #b8d9b0;
+}
+
+.kanban-kolom.kolom-verloren {
+  background: var(--verloren-bg);
+  border-color: #c8c5c2;
+  opacity: 0.85;
+}
+
+.kanban-kolom.kolom-drag-over {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.15);
+}
+
+.kolom-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 10px;
+  border-bottom: 1.5px solid var(--kolom-border);
+}
+
+.kolom-titel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--subtiel);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.kolom-teller {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  background: rgba(0,0,0,0.07);
+  border-radius: 11px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--subtiel);
+}
+
+.kolom-kaarten {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kolom-kaarten::-webkit-scrollbar { width: 4px; }
+.kolom-kaarten::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ─── Klant Kaart ────────────────────────────────────────── */
+.klant-kaart {
+  background: var(--wit);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: box-shadow 150ms ease, transform 150ms ease, border-color 150ms ease;
+  user-select: none;
+}
+
+.klant-kaart:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+  border-color: #bbb5ae;
+}
+
+.klant-kaart:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.klant-kaart.kaart-overtijd {
+  border-color: #e8a9a3;
+  background: #fff8f7;
+}
+
+.kaart-naam {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--tekst);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.kaart-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.kaart-bron {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--subtiel);
+  background: rgba(0,0,0,0.05);
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.kaart-log-count {
+  font-size: 0.72rem;
+  color: var(--subtiel);
+}
+
+.kaart-prijs {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 4px;
+}
+
+.kaart-datum {
+  font-size: 0.75rem;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.kaart-datum-overtijd {
+  background: var(--gevaar-licht);
+  color: var(--gevaar);
+  font-weight: 700;
+}
+
+.kaart-datum-vandaag {
+  background: var(--waarschuwing-licht);
+  color: var(--waarschuwing);
+  font-weight: 700;
+}
+
+.kaart-datum-toekomst {
+  background: rgba(0,0,0,0.04);
+  color: var(--subtiel);
+}
+
+/* ════════════════════════════════════════════════════════════
+   SIDEBAR
+   ════════════════════════════════════════════════════════════ */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 199;
+}
+
+.sidebar {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: var(--sidebar-breedte);
+  height: 100vh;
+  background: var(--wit);
+  border-left: 1.5px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+  z-index: 200;
+  transform: translateX(100%);
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1.5px solid var(--border);
+  background: var(--achtergrond);
+  gap: 12px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.sidebar-naam {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--tekst);
+  line-height: 1.3;
+  flex: 1;
+}
+
+.sidebar-header-acties {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.sidebar-inhoud {
+  padding: 20px;
+  flex: 1;
+}
+
+.sidebar-acties-rij {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 4px;
+}
+
+.sidebar-divider {
+  border: none;
+  border-top: 1.5px solid var(--border);
+  margin: 20px 0;
+}
+
+.sidebar-sectie-titel {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--tekst);
+  margin-bottom: 14px;
+}
+
+/* ─── Logboek ────────────────────────────────────────────── */
+.logboek-sectie {}
+
+.logboek-invoer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.logboek-knoppen {
+  display: flex;
+  gap: 8px;
+}
+
+.logboek-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.logboek-leeg {
+  font-size: 0.88rem;
+  color: var(--subtiel);
+  text-align: center;
+  padding: 16px;
+}
+
+.logboek-entry {
+  background: var(--achtergrond);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.logboek-voicemail {
+  background: var(--goud-licht);
+  border-color: #d4b896;
+}
+
+.entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.entry-icon { font-size: 0.85rem; }
+
+.entry-datum {
+  font-size: 0.75rem;
+  color: var(--subtiel);
+  font-weight: 500;
+}
+
+.entry-tekst {
+  font-size: 0.88rem;
+  color: var(--tekst);
+  line-height: 1.5;
+}
+
+/* ════════════════════════════════════════════════════════════
+   AGENDA SCREEN
+   ════════════════════════════════════════════════════════════ */
+.agenda-scherm {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.agenda-inhoud {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 24px 20px;
+  overflow-y: auto;
+  height: calc(100vh - var(--nav-hoogte));
+}
+
+.agenda-leeg {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--subtiel);
+  font-size: 1rem;
+}
+
+.agenda-groep {
+  margin-bottom: 32px;
+}
+
+.agenda-groep-titel {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+
+.groep-overtijd { color: var(--gevaar); border-bottom-color: var(--gevaar); }
+.groep-vandaag  { color: var(--waarschuwing); border-bottom-color: var(--waarschuwing); }
+.groep-toekomst { color: var(--tekst); }
+
+.agenda-item {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--wit);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: box-shadow 150ms ease, transform 150ms ease;
+  border-left: 4px solid var(--border);
+}
+
+.agenda-item:hover {
+  box-shadow: var(--shadow);
+  transform: translateX(2px);
+}
+
+.agenda-item-overtijd {
+  background: var(--gevaar-licht);
+  border-left-color: var(--gevaar);
+  border-color: #e8a9a3;
+}
+
+.agenda-item-vandaag {
+  background: var(--waarschuwing-licht);
+  border-left-color: var(--waarschuwing);
+  border-color: #f0d090;
+}
+
+.agenda-datum {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--subtiel);
+  white-space: nowrap;
+}
+
+.agenda-naam {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--tekst);
+}
+
+.agenda-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.agenda-prijs {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ANALYSE SCREEN
+   ════════════════════════════════════════════════════════════ */
+.analyse-scherm {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 24px;
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.analyse-sectie {
+  margin-bottom: 8px;
+}
+
+.analyse-sectie-titel {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--tekst);
+  margin-bottom: 8px;
+}
+
+.analyse-uitleg {
+  color: var(--subtiel);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.walkin-totaal {
+  font-size: 0.95rem;
+  color: var(--subtiel);
+  margin-top: 8px;
+}
+
+.walkin-totaal strong {
+  color: var(--tekst);
+  font-size: 1.1rem;
+}
+
+.analyse-divider {
+  border: none;
+  border-top: 1.5px solid var(--border);
+  margin: 32px 0;
+}
+
+.stat-rij {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.stat-blok {
+  background: var(--wit);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat-getal {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.stat-label {
+  font-size: 0.88rem;
+  color: var(--subtiel);
+  font-weight: 500;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MODALS
+   ════════════════════════════════════════════════════════════ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fade-in 200ms ease;
+}
+
+.modal {
+  background: var(--wit);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 520px;
+  animation: slide-up 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.modal-titel {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--tekst);
+}
+
+.modal-inhoud {
+  padding: 20px 24px;
+}
+
+.modal-inhoud p {
+  font-size: 0.95rem;
+  color: var(--tekst);
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1.5px solid var(--border);
+  background: var(--achtergrond);
+}
+
+/* Confirm dialog */
+.confirm-dialog {
+  background: var(--wit);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 440px;
+  padding: 28px 28px 24px;
+  animation: slide-up 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.confirm-titel {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--tekst);
+  margin-bottom: 10px;
+}
+
+.confirm-bericht {
+  font-size: 0.92rem;
+  color: var(--subtiel);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.confirm-knoppen {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Import waarschuwing */
+.import-waarschuwing {
+  background: var(--gevaar-licht);
+  border: 1px solid #e8a9a3;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  color: var(--gevaar);
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TOAST
+   ════════════════════════════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 400;
+  padding: 14px 22px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  animation: toast-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 360px;
+}
+
+.toast-succes {
+  background: var(--accent);
+  color: var(--wit);
+}
+
+.toast-fout {
+  background: var(--gevaar);
+  color: var(--wit);
+}
+
+/* ════════════════════════════════════════════════════════════
+   ANIMATIES
+   ════════════════════════════════════════════════════════════ */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ════════════════════════════════════════════════════════════ */
+
+/* Tablet wide */
+@media (max-width: 1100px) {
+  :root { --sidebar-breedte: 380px; }
+  .kanban-kolom { flex: 0 0 210px; min-width: 210px; }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-breedte: 100vw;
+    --nav-hoogte: 56px;
+  }
+
+  .nav { padding: 0 12px; gap: 10px; }
+  .nav-merk { font-size: 1.1rem; }
+  .nav-crm { display: none; }
+  .nav-tab { padding: 7px 12px; font-size: 0.82rem; }
+  .nav-acties .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
+
+  .kanban-board { padding: 10px; gap: 8px; }
+  .kanban-kolom { flex: 0 0 190px; min-width: 190px; }
+
+  .sidebar { border-left: none; border-top: 1.5px solid var(--border); }
+
+  .agenda-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .agenda-meta { justify-content: flex-start; }
+
+  .stat-rij { grid-template-columns: 1fr; }
+
+  .veld-rij { grid-template-columns: 1fr; }
+
+  .modal { max-width: 100%; }
+}
+
+/* Scrollbar styling algemeen */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ════════════════════════════════════════════════════════════
+   STATUS BADGES — nieuwe pipeline stages
+   ════════════════════════════════════════════════════════════ */
+.status-lead          { background: #fef3cd; color: #856404; }
+.status-showroombezoek { background: #d1ecf1; color: #0c5460; }
+.status-thuismeting   { background: #e2d9f3; color: #4a3080; }
+.status-offerte       { background: #cce5ff; color: #004085; }
+.status-onderhandeling { background: #fff3cd; color: #7d5f0b; }
+.status-besteld       { background: #d4edda; color: #155724; }
+.status-geinstalleerd { background: #c8f0e0; color: #0a5c3a; }
+.status-service       { background: #e8f4fd; color: #1565a0; }
+.status-verloren      { background: #e2e3e5; color: #383d41; }
+
+/* ════════════════════════════════════════════════════════════
+   KANBAN — layout update voor filter bar
+   ════════════════════════════════════════════════════════════ */
+.kanban-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.kanban-board {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+/* Besteld/Geïnstalleerd/Service column */
+.kanban-kolom.kolom-besteld {
+  background: var(--verkocht-bg);
+  border-color: #b8d9b0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   FILTER BAR
+   ════════════════════════════════════════════════════════════ */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--wit);
+  border-bottom: 1.5px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 6px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  color: var(--tekst);
+  background: var(--achtergrond);
+  cursor: pointer;
+  transition: border-color 150ms ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+select.filter-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6460' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+}
+
+.filter-maand { min-width: 140px; }
+.filter-wis   { font-size: 0.8rem; white-space: nowrap; }
+
+.filter-teller {
+  font-size: 0.8rem;
+  color: var(--subtiel);
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.filter-bar-spacer { flex: 1; }
+
+.weergave-knoppen {
+  display: flex;
+  gap: 4px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   KAART — nieuwe elementen
+   ════════════════════════════════════════════════════════════ */
+.kaart-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.kaart-header .kaart-naam {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.kaart-taken-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: var(--waarschuwing);
+  color: var(--wit);
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.kaart-adviseur {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   GLOBAL SEARCH OVERLAY
+   ════════════════════════════════════════════════════════════ */
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 500;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 80px;
+  animation: fade-in 150ms ease;
+}
+
+.search-container {
+  background: var(--wit);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 620px;
+  overflow: hidden;
+  animation: slide-up 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.search-invoer-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1.5px solid var(--border);
+  color: var(--subtiel);
+}
+
+.search-input-groot {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  color: var(--tekst);
+  background: transparent;
+}
+
+.search-input-groot::placeholder {
+  color: var(--subtiel);
+}
+
+.search-resultaten {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.search-resultaat-item {
+  padding: 14px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 120ms ease;
+}
+
+.search-resultaat-item:hover {
+  background: var(--achtergrond);
+}
+
+.search-resultaat-item:last-child {
+  border-bottom: none;
+}
+
+.search-resultaat-naam {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--tekst);
+  margin-bottom: 4px;
+}
+
+.search-resultaat-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--subtiel);
+}
+
+.search-geen-resultaat {
+  padding: 24px 20px;
+  text-align: center;
+  color: var(--subtiel);
+  font-size: 0.92rem;
+}
+
+.search-hint {
+  padding: 14px 20px;
+  font-size: 0.8rem;
+  color: var(--subtiel);
+  text-align: center;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TAKEN SECTIE (sidebar)
+   ════════════════════════════════════════════════════════════ */
+.taken-sectie {}
+
+.taken-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.taken-header .sidebar-sectie-titel {
+  margin-bottom: 0;
+}
+
+.taken-badge-open {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--waarschuwing);
+  color: var(--wit);
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.taak-invoer-rij {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.taak-invoer-rij .fk-input {
+  flex: 1;
+  font-size: 0.88rem;
+  padding: 8px 12px;
+}
+
+.fk-input-smal {
+  flex: 0 0 130px !important;
+  min-width: 0;
+  font-size: 0.82rem !important;
+}
+
+.taak-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.taak-item:last-child { border-bottom: none; }
+
+.taak-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.taak-checkbox:hover {
+  border-color: var(--accent);
+}
+
+.taak-checkbox-aan {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--wit);
+}
+
+.taak-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.taak-titel {
+  font-size: 0.88rem;
+  color: var(--tekst);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taak-datum {
+  font-size: 0.75rem;
+  color: var(--subtiel);
+}
+
+.taak-datum-laat {
+  color: var(--gevaar);
+  font-weight: 600;
+}
+
+.taak-verwijder {
+  width: 28px !important;
+  height: 28px !important;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.taak-item:hover .taak-verwijder {
+  opacity: 1;
+}
+
+.taak-item-afgerond .taak-titel {
+  text-decoration: line-through;
+  color: var(--subtiel);
+}
+
+.taken-afgerond-sectie {
+  margin-top: 8px;
+}
+
+.taken-toon-afgerond {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--subtiel);
+  padding: 4px 0;
+  text-decoration: underline;
+  font-family: var(--font-body);
+  margin-bottom: 8px;
+}
+
+.taken-toon-afgerond:hover { color: var(--tekst); }
+
+/* ════════════════════════════════════════════════════════════
+   DUPLICAAT WAARSCHUWING
+   ════════════════════════════════════════════════════════════ */
+.duplicaat-waarschuwing {
+  background: var(--waarschuwing-licht);
+  border: 1.5px solid #f0c060;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin: 12px 0;
+}
+
+.duplicaat-waarschuwing strong {
+  display: block;
+  color: var(--waarschuwing);
+  font-size: 0.88rem;
+  margin-bottom: 10px;
+}
+
+.duplicaat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid #e8d080;
+}
+
+.duplicaat-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.duplicaat-naam {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--tekst);
+}
+
+.duplicaat-info {
+  font-size: 0.8rem;
+  color: var(--subtiel);
+  margin-top: 8px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TODAY VIEW
+   ════════════════════════════════════════════════════════════ */
+.today-view {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.today-inhoud {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 28px 20px;
+  overflow-y: auto;
+  height: calc(100vh - var(--nav-hoogte));
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.today-sectie {}
+
+.today-sectie-titel {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--tekst);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.today-teller {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  background: var(--waarschuwing);
+  color: var(--wit);
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+}
+
+.today-teller-taken {
+  background: var(--accent);
+}
+
+.today-leeg {
+  padding: 24px 0;
+  color: var(--subtiel);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.today-overtijd-tag {
+  font-size: 0.78rem;
+  color: var(--gevaar);
+  font-weight: 700;
+  font-family: var(--font-body);
+}
+
+.today-taak-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--wit);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  transition: box-shadow 150ms ease;
+}
+
+.today-taak-item:hover {
+  box-shadow: var(--shadow);
+}
+
+.today-taak-checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.today-taak-checkbox:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.today-taak-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.today-taak-titel {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--tekst);
+}
+
+.today-taak-dossier {
+  font-size: 0.78rem;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.today-taak-datum {
+  font-size: 0.78rem;
+  color: var(--subtiel);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   LIJST WEERGAVE
+   ════════════════════════════════════════════════════════════ */
+.lijst-weergave {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.lijst-rij {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: var(--wit);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+.lijst-rij:hover {
+  box-shadow: var(--shadow);
+  transform: translateX(2px);
+}
+
+.lijst-naam {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--tekst);
+  flex: 0 0 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lijst-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--subtiel);
+}
+
+.lijst-prijs {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.lijst-taken-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--waarschuwing);
+  background: var(--waarschuwing-licht);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.lijst-datum {
+  font-size: 0.75rem;
+  color: var(--subtiel);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ANALYSE — pipeline overzicht + stat uitbreiding
+   ════════════════════════════════════════════════════════════ */
+.stat-rij {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.stat-getal-taken {
+  color: var(--waarschuwing);
+}
+
+.pipeline-overzicht {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.pipeline-rij {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pipeline-status {
+  font-size: 0.82rem;
+  color: var(--subtiel);
+  font-weight: 600;
+  flex: 0 0 140px;
+  text-align: right;
+}
+
+.pipeline-bar-wrapper {
+  flex: 1;
+  height: 10px;
+  background: var(--achtergrond);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.pipeline-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 5px;
+  transition: width 400ms ease;
+  min-width: 4px;
+}
+
+.pipeline-aantal {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--tekst);
+  flex: 0 0 28px;
+  text-align: right;
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — updates
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .filter-bar { gap: 6px; padding: 8px 12px; }
+  .filter-select { font-size: 0.78rem; padding: 5px 8px; }
+  .filter-maand { min-width: 110px; }
+  .lijst-naam { flex: 0 0 140px; }
+  .lijst-meta { display: none; }
+  .today-inhoud { padding: 16px; gap: 24px; }
+  .stat-rij { grid-template-columns: 1fr 1fr; }
+  .pipeline-status { flex: 0 0 110px; }
+  .search-overlay { padding-top: 40px; }
+  .search-container { max-width: calc(100vw - 24px); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   STEP 2: Dossier 4-tab UI
+   ════════════════════════════════════════════════════════════ */
+
+/* Sidebar wider for 4-tab layout */
+.sidebar { width: min(540px, 100vw); display: flex; flex-direction: column; }
+
+/* Tab nav */
+.dossier-tabs-nav {
+  display: flex;
+  border-bottom: 1px solid var(--kleur-rand);
+  background: var(--kleur-achtergrond);
+  flex-shrink: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.dossier-tabs-nav::-webkit-scrollbar { display: none; }
+
+.dossier-tab-knop {
+  flex: 1;
+  min-width: max-content;
+  padding: 11px 12px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 0.80rem;
+  font-weight: 500;
+  color: var(--kleur-tekst-licht);
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+.dossier-tab-knop:hover { color: var(--kleur-tekst); }
+.dossier-tab-knop-actief {
+  color: var(--kleur-primair);
+  border-bottom-color: var(--kleur-primair);
+  font-weight: 600;
+}
+
+/* Tab content scrollable area */
+.dossier-tab-inhoud {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  min-height: 0;
+}
+
+/* Changelog banner */
+.changelog-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fffbea;
+  border-bottom: 1px solid #e8d84a;
+  flex-shrink: 0;
+}
+.changelog-inhoud { flex: 1; font-size: 0.83rem; line-height: 1.4; }
+.changelog-lijst { margin: 6px 0 0 18px; padding: 0; color: var(--kleur-tekst-licht); line-height: 1.7; }
+
+/* Tab: Bestanden */
+.tab-bestanden, .tab-bezoeken, .tab-taken-notities, .tab-overzicht { display: flex; flex-direction: column; }
+
+.tab-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36px 20px;
+  border: 2px dashed var(--kleur-rand);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  text-align: center;
+  color: var(--kleur-tekst-licht);
+}
+.placeholder-icon { font-size: 2rem; margin-bottom: 8px; }
+.placeholder-titel { font-weight: 600; margin-bottom: 4px; color: var(--kleur-tekst); font-size: 0.95rem; }
+.placeholder-tekst { font-size: 0.84rem; max-width: 280px; line-height: 1.5; }
+
+.offerte-samenvatting {
+  padding: 16px;
+  background: var(--kleur-achtergrond);
+  border-radius: var(--radius);
+  border: 1px solid var(--kleur-rand);
+}
+.offerte-prijs-groot { font-size: 1.5rem; font-weight: 700; color: var(--kleur-tekst); margin: 4px 0 6px; }
+.offerte-budget, .offerte-materialen { font-size: 0.84rem; color: var(--kleur-tekst-licht); margin-top: 2px; }
+
+/* Dropzone */
+.dropzone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 164px; border: 2px dashed var(--border); border-radius: 12px;
+  background: var(--goud-licht); cursor: pointer; padding: 28px 20px;
+  text-align: center; transition: border-color 0.15s, background 0.15s;
+  margin-bottom: 20px; user-select: none;
+}
+.dropzone:hover, .dropzone-actief {
+  border-color: var(--goud); background: #f0e4cc;
+}
+.dropzone-bezig { opacity: 0.65; cursor: wait; pointer-events: none; }
+.dropzone-icoon { font-size: 2rem; margin-bottom: 8px; }
+.dropzone-tekst { font-size: 1rem; font-weight: 600; color: var(--tekst); margin: 0 0 4px; }
+.dropzone-sub   { font-size: 0.8rem; color: var(--subtiel); margin: 0; }
+
+/* Bestandenlijst */
+.bestanden-lijst { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.bestand-rij {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--wit); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px;
+}
+.bestand-icoon { font-size: 1.5rem; line-height: 1; flex-shrink: 0; padding-top: 2px; }
+.bestand-info  { flex: 1; min-width: 0; }
+.bestand-naam  { font-size: 0.93rem; font-weight: 600; color: var(--tekst); word-break: break-word; margin-bottom: 2px; }
+.bestand-meta  { font-size: 0.78rem; color: var(--subtiel); }
+.bestand-acties {
+  display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0; align-items: flex-start;
+}
+.hernoem-invoer-rij { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.fk-input-sm { padding: 6px 10px; font-size: 0.88rem; }
+
+/* Tab: Bezoeken */
+.bezoek-invoer { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--kleur-rand); }
+
+/* Tab: Taken & Notities */
+.notitie-sectie { display: flex; flex-direction: column; margin-top: 4px; }
+
+/* Mobile: full-screen sidebar */
+@media (max-width: 640px) {
+  .sidebar { width: 100vw; max-height: 100dvh; border-radius: 0; }
+}
