@@ -54,8 +54,8 @@ const FK_DATA = (() => {
       adviseur: "Jan Franssen",
       showroom: "Geel",
       bron: "Toonzaal",
-      offerteprijs: "€ 18.500 – 21.000",
-      budget: "tot € 22.000",
+      offerteprijs: 21000,
+      budget: 22000,
       materialen: "eikenhout, composiet werkblad, strak",
       volgende_actie: "2026-05-22T10:00",
       status: "Offerte",
@@ -81,8 +81,8 @@ const FK_DATA = (() => {
       adviseur: "Sophie Maes",
       showroom: "Herentals",
       bron: "Web",
-      offerteprijs: "€ 12.000 – 14.500",
-      budget: "tot € 15.000",
+      offerteprijs: 14500,
+      budget: 15000,
       materialen: "MDF gelakt wit, kwarts werkblad",
       volgende_actie: "2026-05-15T09:00",
       status: "Onderhandeling",
@@ -106,8 +106,8 @@ const FK_DATA = (() => {
       adviseur: "Kevin Leclercq",
       showroom: "Geel",
       bron: "Telefoon",
-      offerteprijs: "€ 24.000 – 28.000",
-      budget: "Ruim budget",
+      offerteprijs: 28000,
+      budget: null,
       materialen: "massief eik, natuursteen, eiland",
       volgende_actie: "2026-06-03T14:00",
       status: "Offerte",
@@ -132,8 +132,8 @@ const FK_DATA = (() => {
       adviseur: "Jan Franssen",
       showroom: "Mol",
       bron: "Walk-in",
-      offerteprijs: "€ 8.900",
-      budget: "tot € 10.000",
+      offerteprijs: 8900,
+      budget: 10000,
       materialen: "laminaat, compacte opstelling",
       volgende_actie: "",
       status: "Verloren",
@@ -157,8 +157,8 @@ const FK_DATA = (() => {
       adviseur: "Sophie Maes",
       showroom: "Herentals",
       bron: "Web",
-      offerteprijs: "€ 16.800",
-      budget: "tot € 18.000",
+      offerteprijs: 16800,
+      budget: 18000,
       materialen: "hout nerf, beige werkblad, greeploos",
       volgende_actie: "2026-05-25T11:00",
       status: "Besteld",
@@ -183,8 +183,8 @@ const FK_DATA = (() => {
       adviseur: "Kevin Leclercq",
       showroom: "Mol",
       bron: "Toonzaal",
-      offerteprijs: "",
-      budget: "tot € 12.000",
+      offerteprijs: null,
+      budget: 12000,
       materialen: "nog te bespreken",
       volgende_actie: "2026-05-28T10:30",
       status: "Showroombezoek",
@@ -288,6 +288,21 @@ const FK_DATA = (() => {
     return `${(n/1048576).toFixed(1)} MB`;
   };
 
+  const parseEuro = (input) => {
+    if (input === null || input === undefined || input === "") return null;
+    if (typeof input === "number") return isNaN(input) ? null : input;
+    const parts = String(input).split(/[–\-]/);
+    const raw = parts[parts.length - 1].replace(/[^\d]/g, "");
+    const n = parseInt(raw, 10);
+    return isNaN(n) ? null : n;
+  };
+
+  const fmtEuro = (n) => {
+    const num = Number(n);
+    if (!n || isNaN(num) || num === 0) return "";
+    return "€ " + num.toLocaleString("nl-BE");
+  };
+
   const addFile = (dossierId, file) => {
     if (file.size > MAX_BESTAND_BYTES) {
       return Promise.resolve({ ok: false, error: `Bestand "${file.name}" is groter dan 25 MB. Verklein het of upload een ander bestand.` });
@@ -325,16 +340,24 @@ const FK_DATA = (() => {
   };
 
   /* ── Migratie ──────────────────────────────────────────────── */
-  const migreer = (records) => records.map(r => ({
-    adres: "", adviseur: "", showroom: "", taken: [], orderMaand: "", bestanden: [],
-    voornaam1: "", familienaam1: "", voornaam2: "", familienaam2: "",
-    straat: "", huisnummer: "", postcode: "", stad: "",
-    ...r,
-    status: MIGRATIE_MAP[r.status] || (STATUSSEN.includes(r.status) ? r.status : "Lead")
-  }));
+  const migreer = (records) => records.map(r => {
+    const base = {
+      adres: "", adviseur: "", showroom: "", taken: [], orderMaand: "", bestanden: [],
+      voornaam1: "", familienaam1: "", voornaam2: "", familienaam2: "",
+      straat: "", huisnummer: "", postcode: "", stad: "",
+      ...r,
+      status: MIGRATIE_MAP[r.status] || (STATUSSEN.includes(r.status) ? r.status : "Lead")
+    };
+    if (typeof base.offerteprijs === "string") base.offerteprijs = parseEuro(base.offerteprijs);
+    if (typeof base.budget       === "string") base.budget       = parseEuro(base.budget);
+    return base;
+  });
 
   const heeftOudeStatussen = (records) =>
     records.some(r => Object.prototype.hasOwnProperty.call(MIGRATIE_MAP, r.status));
+
+  const heeftStringPrijs = (records) =>
+    records.some(r => typeof r.offerteprijs === "string" && r.offerteprijs !== "");
 
   /* ── Auth ──────────────────────────────────────────────────── */
   const checkPassword    = (pw) => pw === PASSWORD;
@@ -353,7 +376,7 @@ const FK_DATA = (() => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_RECORDS));
     } else {
       const raw = getAllRaw();
-      if (heeftOudeStatussen(raw)) {
+      if (heeftOudeStatussen(raw) || heeftStringPrijs(raw)) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(migreer(raw)));
       }
     }
@@ -370,8 +393,8 @@ const FK_DATA = (() => {
       id: newId(), naam: "", telefoon: "", email: "", adres: "",
       voornaam1: "", familienaam1: "", voornaam2: "", familienaam2: "",
       straat: "", huisnummer: "", postcode: "", stad: "",
-      adviseur: "", showroom: "", bron: "Web", offerteprijs: "",
-      budget: "", materialen: "", volgende_actie: "", status: "Lead",
+      adviseur: "", showroom: "", bron: "Web", offerteprijs: null,
+      budget: null, materialen: "", volgende_actie: "", status: "Lead",
       orderMaand: "", taken: [], bestanden: [], aangemaakt: new Date().toISOString(), logboek: [],
       ...velden
     };
@@ -616,7 +639,8 @@ const FK_DATA = (() => {
     walkinsDezeMaand, dossiersDezeMaand,
     exportExcel, importExcel,
     saveSafe,
-    addFile, getFileBlob, renameFile, deleteFile, fmtBytes
+    addFile, getFileBlob, renameFile, deleteFile, fmtBytes,
+    parseEuro, fmtEuro
   };
 })();
 

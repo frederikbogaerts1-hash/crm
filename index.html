@@ -293,7 +293,7 @@ function KlantKaart({ record, onKlik, onDragStart }) {
         {record.showroom  && <span className="kaart-bron">{record.showroom}</span>}
         {!record.adviseur && record.bron && <span className="kaart-bron">{record.bron}</span>}
       </div>
-      {record.offerteprijs && <div className="kaart-prijs">{record.offerteprijs}</div>}
+      {record.offerteprijs && <div className="kaart-prijs">{FK_DATA.fmtEuro(record.offerteprijs)}</div>}
       {record.volgende_actie && (
         <div className={`kaart-datum kaart-datum-${overtijdStatus}`}>
           {overtijdStatus==="overtijd"&&"⚠ "}{overtijdStatus==="vandaag"&&"📅 "}{overtijdStatus==="toekomst"&&"⏰ "}
@@ -527,13 +527,19 @@ function TabOverzicht({ record, velden, wijzig, veldFouten, opgeslagen, overtijd
       <div className="veld-groep">
         <label className="veld-label" htmlFor="s-prijs">Offerteprijs</label>
         <input id="s-prijs" className="fk-input" value={velden.offerteprijs}
-          onChange={e=>wijzig("offerteprijs",e.target.value)} placeholder="bv. € 12.500 – 15.000" />
+          onChange={e=>wijzig("offerteprijs",e.target.value)}
+          onFocus={e=>{const n=FK_DATA.parseEuro(e.target.value);wijzig("offerteprijs",n!=null?String(n):"");}}
+          onBlur={e=>wijzig("offerteprijs",FK_DATA.fmtEuro(FK_DATA.parseEuro(e.target.value)))}
+          placeholder="bv. 15000" />
       </div>
       <div className="veld-rij">
         <div className="veld-groep">
           <label className="veld-label" htmlFor="s-budget">Budget</label>
           <input id="s-budget" className="fk-input" value={velden.budget}
-            onChange={e=>wijzig("budget",e.target.value)} placeholder="bv. tot € 15.000" />
+            onChange={e=>wijzig("budget",e.target.value)}
+            onFocus={e=>{const n=FK_DATA.parseEuro(e.target.value);wijzig("budget",n!=null?String(n):"");}}
+            onBlur={e=>wijzig("budget",FK_DATA.fmtEuro(FK_DATA.parseEuro(e.target.value)))}
+            placeholder="bv. 15000" />
         </div>
         <div className="veld-groep">
           <label className="veld-label" htmlFor="s-mat">Materialen</label>
@@ -695,8 +701,8 @@ function TabBestanden({ record, onRefresh, onToast }) {
 
       {(record.offerteprijs || record.materialen) && (
         <div className="offerte-samenvatting">
-          {record.offerteprijs && (<><div className="veld-label">Offerteprijs (huidig)</div><div className="offerte-prijs-groot">{record.offerteprijs}</div></>)}
-          {record.budget     && <div className="offerte-budget">Budget: {record.budget}</div>}
+          {record.offerteprijs && (<><div className="veld-label">Offerteprijs (huidig)</div><div className="offerte-prijs-groot">{FK_DATA.fmtEuro(record.offerteprijs)}</div></>)}
+          {record.budget     && <div className="offerte-budget">Budget: {FK_DATA.fmtEuro(record.budget)}</div>}
           {record.materialen && <div className="offerte-materialen">{record.materialen}</div>}
         </div>
       )}
@@ -814,7 +820,7 @@ function DetailSidebar({ recordId, records, onSluit, onRefresh, onToast, onVerwi
         stad:         record.stad         || "",
         naam:record.naam||"", telefoon:record.telefoon||"", email:record.email||"",
         adres:record.adres||"", adviseur:record.adviseur||"", showroom:record.showroom||"",
-        bron:record.bron||"Web", offerteprijs:record.offerteprijs||"", budget:record.budget||"",
+        bron:record.bron||"Web", offerteprijs:FK_DATA.fmtEuro(record.offerteprijs)||"", budget:FK_DATA.fmtEuro(record.budget)||"",
         materialen:record.materialen||"", volgende_actie:record.volgende_actie||"",
         orderMaand:record.orderMaand||"", status:record.status||"Lead"
       });
@@ -831,7 +837,9 @@ function DetailSidebar({ recordId, records, onSluit, onRefresh, onToast, onVerwi
     if (Object.keys(f).length > 0) { setVeldFouten(f); return; }
     const naam  = computeNaam(velden);
     const adres = computeAdres(velden);
-    const r = FK_DATA.update(record.id, { ...velden, naam, adres });
+    const r = FK_DATA.update(record.id, { ...velden, naam, adres,
+      offerteprijs: FK_DATA.parseEuro(velden.offerteprijs),
+      budget:       FK_DATA.parseEuro(velden.budget) });
     if (!r.ok) { onToast({type:"fout",bericht:r.error}); return; }
     setOpgeslagen(true); setTimeout(()=>setOpgeslagen(false),2000); onRefresh();
   };
@@ -1166,7 +1174,7 @@ function KanbanScreen({ records, onRefresh, onToast, sidebar, setSidebar }) {
                     <div className="lijst-meta">
                       {r.adviseur    && <span>{r.adviseur}</span>}
                       {r.showroom    && <span>{r.showroom}</span>}
-                      {r.offerteprijs && <span className="lijst-prijs">{r.offerteprijs}</span>}
+                      {r.offerteprijs && <span className="lijst-prijs">{FK_DATA.fmtEuro(r.offerteprijs)}</span>}
                     </div>
                     {ot>0 && <span className="lijst-taken-badge">{ot} taak{ot>1?"en":""}</span>}
                     <span className="lijst-datum">{FK_DATA.fmtDatum(r.aangemaakt)}</span>
@@ -1234,7 +1242,7 @@ function TodayView({ records, onRefresh, onToast, sidebar, setSidebar }) {
                   <div className="agenda-meta">
                     <StatusBadge status={r.status} />
                     {r.adviseur    && <span className="agenda-prijs">{r.adviseur}</span>}
-                    {r.offerteprijs && <span className="agenda-prijs">{r.offerteprijs}</span>}
+                    {r.offerteprijs && <span className="agenda-prijs">{FK_DATA.fmtEuro(r.offerteprijs)}</span>}
                   </div>
                 </div>
               ))
