@@ -170,13 +170,33 @@ function StatusBadge({ status }) {
 }
 
 function LoginScreen({ onLogin }) {
-  const [ww, setWw]     = useState("");
-  const [fout, setFout] = useState("");
-  const submit = (e) => {
+  const [modus,    setModus]    = useState("login");
+  const [email,    setEmail]    = useState("");
+  const [ww,       setWw]       = useState("");
+  const [naam,     setNaam]     = useState("");
+  const [showroom, setShowroom] = useState("Geel");
+  const [fout,     setFout]     = useState("");
+
+  const reset = () => { setFout(""); setEmail(""); setWw(""); setNaam(""); };
+
+  const submitLogin = (e) => {
     e.preventDefault();
-    if (FK_DATA.checkPassword(ww)) { FK_DATA.setAuthenticated(); onLogin(); }
-    else { setFout("Fout wachtwoord. Probeer het opnieuw."); setWw(""); }
+    const r = FK_DATA.login(email.trim(), ww);
+    if (r.ok) onLogin(r.user);
+    else { setFout(r.error); setWw(""); }
   };
+
+  const submitSignup = (e) => {
+    e.preventDefault();
+    if (!naam.trim()) { setFout("Naam is verplicht."); return; }
+    if (!ww) { setFout("Kies een wachtwoord."); return; }
+    const r = FK_DATA.signup(email.trim(), naam.trim(), ww, showroom);
+    if (r.ok) {
+      const lr = FK_DATA.login(email.trim(), ww);
+      if (lr.ok) onLogin(lr.user);
+    } else { setFout(r.error); }
+  };
+
   return (
     <div className="login-scherm">
       <div className="login-kaart">
@@ -185,22 +205,72 @@ function LoginScreen({ onLogin }) {
           <span className="login-logo-keukens"> Keukens</span>
         </div>
         <p className="login-subtitel">Verkoopadministratie</p>
-        <form onSubmit={submit}>
-          <div className="veld-groep">
-            <label className="veld-label" htmlFor="wachtwoord">Wachtwoord</label>
-            <input id="wachtwoord" type="password" className="fk-input" value={ww}
-              onChange={e => { setWw(e.target.value); setFout(""); }}
-              placeholder="Voer het wachtwoord in" autoFocus />
+
+        {modus === "login" ? (
+          <form onSubmit={submitLogin}>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="l-email">E-mailadres</label>
+              <input id="l-email" type="email" className="fk-input" value={email}
+                onChange={e => { setEmail(e.target.value); setFout(""); }}
+                placeholder="naam@franssen.be" autoFocus />
+            </div>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="l-ww">Wachtwoord</label>
+              <input id="l-ww" type="password" className="fk-input" value={ww}
+                onChange={e => { setWw(e.target.value); setFout(""); }}
+                placeholder="Wachtwoord" />
+            </div>
             {fout && <p className="veld-fout">{fout}</p>}
-          </div>
-          <button type="submit" className="btn btn-primary btn-volledig">Aanmelden</button>
-        </form>
+            <button type="submit" className="btn btn-primary btn-volledig">Aanmelden</button>
+            <p className="login-wissel">
+              Nog geen account?{" "}
+              <button type="button" className="btn-tekst" onClick={() => { setModus("signup"); reset(); }}>
+                Nieuw account aanmaken
+              </button>
+            </p>
+          </form>
+        ) : (
+          <form onSubmit={submitSignup}>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="s-naam">Volledige naam</label>
+              <input id="s-naam" className="fk-input" value={naam}
+                onChange={e => { setNaam(e.target.value); setFout(""); }}
+                placeholder="Voornaam Familienaam" autoFocus />
+            </div>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="s-email">E-mailadres (@franssen.be)</label>
+              <input id="s-email" type="email" className="fk-input" value={email}
+                onChange={e => { setEmail(e.target.value); setFout(""); }}
+                placeholder="naam@franssen.be" />
+            </div>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="s-showroom">Toonzaal</label>
+              <select id="s-showroom" className="fk-input" value={showroom} onChange={e => setShowroom(e.target.value)}>
+                {FK_DATA.SHOWROOMS.map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="veld-groep">
+              <label className="veld-label" htmlFor="s-ww">Wachtwoord</label>
+              <input id="s-ww" type="password" className="fk-input" value={ww}
+                onChange={e => { setWw(e.target.value); setFout(""); }}
+                placeholder="Kies een wachtwoord" />
+            </div>
+            {fout && <p className="veld-fout">{fout}</p>}
+            <button type="submit" className="btn btn-primary btn-volledig">Account aanmaken</button>
+            <p className="login-wissel">
+              Al een account?{" "}
+              <button type="button" className="btn-tekst" onClick={() => { setModus("login"); reset(); }}>
+                Aanmelden
+              </button>
+            </p>
+          </form>
+        )}
       </div>
     </div>
   );
 }
 
-function GlobalSearch({ onSluit, onOpenDossier }) {
+function GlobalSearch({ onSluit, onOpenDossier, user }) {
   const [query, setQuery]           = useState("");
   const [resultaten, setResultaten] = useState([]);
   const inputRef = useRef(null);
@@ -211,7 +281,7 @@ function GlobalSearch({ onSluit, onOpenDossier }) {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
   useEffect(() => {
-    if (query.trim().length >= 2) setResultaten(FK_DATA.search(query));
+    if (query.trim().length >= 2) setResultaten(FK_DATA.search(query, user));
     else setResultaten([]);
   }, [query]);
   return (
@@ -251,7 +321,9 @@ function GlobalSearch({ onSluit, onOpenDossier }) {
   );
 }
 
-function Nav({ tab, onTabChange, onNieuw, onExport, onImport, onLogout, onSearch }) {
+const ROLE_LABELS = { salesmanager: "Sales Manager", toonzaalverantwoordelijke: "Toonzaalverantw.", verkoper: "Verkoper" };
+
+function Nav({ tab, onTabChange, onNieuw, onExport, onImport, onLogout, onSearch, onGebruikers, user }) {
   const fileRef = useRef(null);
   return (
     <nav className="nav">
@@ -266,8 +338,17 @@ function Nav({ tab, onTabChange, onNieuw, onExport, onImport, onLogout, onSearch
         <button className={`nav-tab ${tab==="analyse" ? "nav-tab-actief":""}`} onClick={() => onTabChange("analyse")}>Analyse</button>
       </div>
       <div className="nav-acties">
+        {user && (
+          <span className="nav-user-info" title={user.email}>
+            <span className="nav-user-naam">{user.naam.split(" ")[0]}</span>
+            <span className="nav-user-role">{ROLE_LABELS[user.role] || user.role}</span>
+          </span>
+        )}
         <button className="btn btn-secondary btn-sm btn-icoon" onClick={onSearch} title="Zoeken (Ctrl+K)"><IcoSearch /></button>
         <button className="btn btn-primary btn-sm" onClick={onNieuw}><IcoPlusCircle /> Nieuw dossier</button>
+        {user && user.role === "salesmanager" && (
+          <button className="btn btn-secondary btn-sm" onClick={onGebruikers} title="Gebruikersbeheer">Gebruikers</button>
+        )}
         <button className="btn btn-secondary btn-sm btn-icoon" onClick={onExport} title="Excel exporteren"><IcoDownload /></button>
         <button className="btn btn-secondary btn-sm btn-icoon"
           onClick={() => fileRef.current && fileRef.current.click()} title="Excel importeren"><IcoUpload /></button>
@@ -1274,52 +1355,212 @@ function TodayView({ records, onRefresh, onToast, sidebar, setSidebar }) {
   );
 }
 
-function AnalyseScreen({ records, walkins, onWalkin, onToast }) {
+function AnalyseScreen({ records, walkins, onWalkin, onToast, user }) {
+  const [bulkAantal, setBulkAantal] = useState("");
   const nu        = new Date();
   const maandNaam = nu.toLocaleDateString("nl-BE",{month:"long",year:"numeric"});
-  const walkinsDezeMaand  = FK_DATA.walkinsDezeMaand(walkins);
-  const dossiersDezeMaand = FK_DATA.dossiersDezeMaand(records);
+
+  const wiMaand   = FK_DATA.walkinsDezeMaand(walkins, user);
+  const wiWeek    = FK_DATA.walkinsDezeWeek(walkins, user);
+  const wiVandaag = FK_DATA.heeftWalkinVandaag(walkins, user);
+
+  const dossiersMaand = FK_DATA.dossiersDezeMaand(records);
   const totaalBesteld = records.filter(r=>["Besteld","Geïnstalleerd","Service"].includes(r.status)).length;
   const totaalVerkocht= records.filter(r=>["Besteld","Geïnstalleerd","Service"].includes(r.status)).reduce((s,r)=>s+(r.offerteprijs||0),0);
   const openTaken     = records.reduce((acc,r)=>acc+(r.taken||[]).filter(t=>!t.afgerond).length,0);
-  const handleWalkin = () => { const r=FK_DATA.addWalkin(); if(!r.ok) onToast({type:"fout",bericht:r.error}); else onWalkin(); };
+  const { wins, quotes, ratio } = FK_DATA.conversieRatio(records);
+
+  const handlePlus = () => {
+    const r = FK_DATA.addWalkin({ aantal: 1, user });
+    if (!r.ok) onToast({type:"fout",bericht:r.error}); else onWalkin();
+  };
+  const handleMin = () => {
+    const r = FK_DATA.removeLastWalkin(user);
+    if (!r.ok) onToast({type:"fout",bericht:r.error}); else onWalkin();
+  };
+  const handleBulk = () => {
+    const n = parseInt(bulkAantal, 10);
+    if (!n || n < 1 || n > 200) { onToast({type:"fout",bericht:"Voer een getal in tussen 1 en 200."}); return; }
+    const r = FK_DATA.addWalkin({ aantal: n, user });
+    if (!r.ok) onToast({type:"fout",bericht:r.error});
+    else { setBulkAantal(""); onToast({type:"succes",bericht:`${n} walk-ins toegevoegd.`}); onWalkin(); }
+  };
+
+  const wiGefilterd = FK_DATA.walkinsFiltered(walkins, user);
+
   return (
-    <div className="analyse-scherm">
+    <div className="analyse-scherm analyse-scherm--wide">
       <section className="analyse-sectie">
         <h2 className="analyse-sectie-titel">Maandstatistiek — {maandNaam}</h2>
         <div className="stat-rij">
-          <div className="stat-blok"><div className="stat-getal">{dossiersDezeMaand}</div><div className="stat-label">Nieuwe dossiers deze maand</div></div>
-          <div className="stat-blok"><div className="stat-getal">{walkinsDezeMaand}</div><div className="stat-label">Walk-ins deze maand</div></div>
+          <div className="stat-blok"><div className="stat-getal">{dossiersMaand}</div><div className="stat-label">Nieuwe dossiers deze maand</div></div>
+          <div className="stat-blok"><div className="stat-getal">{wiMaand}</div><div className="stat-label">Walk-ins deze maand</div></div>
           <div className="stat-blok"><div className="stat-getal">{totaalBesteld}</div><div className="stat-label">Bestellingen (totaal)</div></div>
           <div className="stat-blok"><div className="stat-getal stat-getal-geld">{FK_DATA.fmtEuro(totaalVerkocht)||"€ 0"}</div><div className="stat-label">Totaal verkocht</div></div>
+          <div className="stat-blok" title={`${wins} wins op ${quotes} offertes`}>
+            <div className={`stat-getal ${ratio < 20 && quotes > 0 ? "stat-getal-waarschuwing" : ""}`}>{quotes > 0 ? ratio.toFixed(1) + "%" : "—"}</div>
+            <div className="stat-label">Conversieratio</div>
+          </div>
           <div className="stat-blok"><div className="stat-getal stat-getal-taken">{openTaken}</div><div className="stat-label">Open taken</div></div>
         </div>
       </section>
       <hr className="analyse-divider" />
-      <section className="analyse-sectie">
-        <h2 className="analyse-sectie-titel">Pipeline overzicht</h2>
-        <div className="pipeline-overzicht">
-          {STATUSSEN.filter(s=>s!=="Verloren").map(s => {
-            const aantal=records.filter(r=>r.status===s).length;
-            return (
-              <div key={s} className="pipeline-rij">
-                <span className="pipeline-status">{s}</span>
-                <div className="pipeline-bar-wrapper">
-                  <div className="pipeline-bar" style={{width:`${Math.min(100,(aantal/Math.max(records.length,1))*100*3)}%`}} />
+      <div className="analyse-grid">
+        <section className="analyse-sectie">
+          <h2 className="analyse-sectie-titel">Pipeline overzicht</h2>
+          <div className="pipeline-overzicht">
+            {STATUSSEN.filter(s=>s!=="Verloren").map(s => {
+              const aantal=records.filter(r=>r.status===s).length;
+              return (
+                <div key={s} className="pipeline-rij">
+                  <span className="pipeline-status">{s}</span>
+                  <div className="pipeline-bar-wrapper">
+                    <div className="pipeline-bar" style={{width:`${Math.min(100,(aantal/Math.max(records.length,1))*100*3)}%`}} />
+                  </div>
+                  <span className="pipeline-aantal">{aantal}</span>
                 </div>
-                <span className="pipeline-aantal">{aantal}</span>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        </section>
+        <section className="analyse-sectie walkin-widget">
+          <h2 className="analyse-sectie-titel">Walk-in teller</h2>
+          <div className="walkin-telrij">
+            <div className="walkin-stat"><span className="walkin-getal">{wiWeek}</span><span className="walkin-stat-label">Deze week</span></div>
+            <div className="walkin-stat"><span className="walkin-getal">{wiMaand}</span><span className="walkin-stat-label">Deze maand</span></div>
+          </div>
+          <div className="walkin-knoppen">
+            <button className="btn btn-walkin" onClick={handlePlus}>+1</button>
+            <button className="btn btn-secondary btn-walkin-min" onClick={handleMin} disabled={!wiVandaag} title="Verwijder laatste walk-in van vandaag">−1</button>
+          </div>
+          <div className="walkin-bulk-rij">
+            <input type="number" className="fk-input walkin-bulk-input" min="1" max="200"
+              value={bulkAantal} onChange={e=>setBulkAantal(e.target.value)}
+              placeholder="Aantal" onKeyDown={e=>e.key==="Enter"&&handleBulk()} />
+            <button className="btn btn-secondary" onClick={handleBulk} disabled={!bulkAantal}>Voeg toe</button>
+          </div>
+          {user && <p className="walkin-showroom-info">Toonzaal: <strong>{user.showroom}</strong></p>}
+          <p className="walkin-totaal">Totaal (jouw scope): <strong>{wiGefilterd.length}</strong></p>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function UsersAdminModal({ onSluit, onToast }) {
+  const [users,       setUsers]       = useState(()=>FK_DATA.users.list());
+  const [editUser,    setEditUser]    = useState(null);
+  const [nieuwForm,   setNieuwForm]   = useState(false);
+  const [velden,      setVelden]      = useState({email:"",naam:"",role:"verkoper",showroom:"Geel",wachtwoord:""});
+  const [fout,        setFout]        = useState("");
+
+  const refresh = () => setUsers(FK_DATA.users.list());
+  const wijzig  = (k,v) => setVelden(f=>({...f,[k]:v}));
+
+  const slaOp = () => {
+    setFout("");
+    if (!velden.naam.trim()) { setFout("Naam is verplicht."); return; }
+    if (!velden.email.trim()) { setFout("E-mail is verplicht."); return; }
+    if (editUser) {
+      const patch = { naam: velden.naam, role: velden.role, showroom: velden.showroom };
+      if (velden.wachtwoord) patch.wachtwoord = velden.wachtwoord;
+      const r = FK_DATA.users.update(editUser.id, patch);
+      if (!r.ok) { setFout(r.error); return; }
+      onToast({type:"succes",bericht:"Gebruiker bijgewerkt."});
+    } else {
+      const r = FK_DATA.users.add({...velden});
+      if (!r.ok) { setFout(r.error); return; }
+      onToast({type:"succes",bericht:"Gebruiker aangemaakt."});
+    }
+    refresh(); setEditUser(null); setNieuwForm(false);
+    setVelden({email:"",naam:"",role:"verkoper",showroom:"Geel",wachtwoord:""});
+  };
+
+  const startEdit = (u) => {
+    setEditUser(u); setNieuwForm(true);
+    setVelden({email:u.email,naam:u.naam,role:u.role,showroom:u.showroom,wachtwoord:""});
+    setFout("");
+  };
+
+  const verwijder = (u) => {
+    const r = FK_DATA.users.delete(u.id);
+    if (!r.ok) onToast({type:"fout",bericht:r.error});
+    else { onToast({type:"succes",bericht:"Gebruiker verwijderd."}); refresh(); }
+  };
+
+  const annuleer = () => { setNieuwForm(false); setEditUser(null); setVelden({email:"",naam:"",role:"verkoper",showroom:"Geel",wachtwoord:""}); setFout(""); };
+
+  const ROLE_LABELS_FULL = { salesmanager:"Sales Manager", toonzaalverantwoordelijke:"Toonzaalverantw.", verkoper:"Verkoper" };
+
+  return (
+    <div className="modal-backdrop" onClick={onSluit}>
+      <div className="modal modal-breed" onClick={e=>e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-titel">Gebruikersbeheer</h2>
+          <button className="btn-icoon-rond" onClick={onSluit}><IcoX /></button>
         </div>
-      </section>
-      <hr className="analyse-divider" />
-      <section className="analyse-sectie">
-        <h2 className="analyse-sectie-titel">Walk-in teller</h2>
-        <p className="analyse-uitleg">Klik op de knop elke keer iemand binnenstapt in de toonzaal. Anoniem — er wordt geen dossier aangemaakt.</p>
-        <button className="btn btn-walkin" onClick={handleWalkin}>+1 Walk-in</button>
-        <p className="walkin-totaal">Totaal geregistreerd: <strong>{walkins.length}</strong></p>
-      </section>
+        <div className="modal-inhoud">
+          {!nieuwForm ? (
+            <>
+              <table className="users-tabel">
+                <thead><tr><th>Naam</th><th>E-mail</th><th>Rol</th><th>Toonzaal</th><th></th></tr></thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.id}>
+                      <td>{u.naam}</td>
+                      <td className="users-email">{u.email}</td>
+                      <td><span className="users-role-badge">{ROLE_LABELS_FULL[u.role]||u.role}</span></td>
+                      <td>{u.showroom}</td>
+                      <td className="users-acties">
+                        <button className="btn btn-secondary btn-sm" onClick={()=>startEdit(u)}>Bewerk</button>
+                        <button className="btn btn-gevaar-outline btn-sm" onClick={()=>verwijder(u)}>Verwijder</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button className="btn btn-primary btn-sm" style={{marginTop:"16px"}} onClick={()=>setNieuwForm(true)}>+ Nieuwe gebruiker</button>
+            </>
+          ) : (
+            <div className="users-form">
+              <h3 className="sidebar-sectie-titel">{editUser ? "Gebruiker bewerken" : "Nieuwe gebruiker"}</h3>
+              <div className="veld-groep">
+                <label className="veld-label">Volledige naam</label>
+                <input className="fk-input" value={velden.naam} onChange={e=>wijzig("naam",e.target.value)} placeholder="Naam" />
+              </div>
+              {!editUser && (
+                <div className="veld-groep">
+                  <label className="veld-label">E-mailadres (@franssen.be)</label>
+                  <input className="fk-input" type="email" value={velden.email} onChange={e=>wijzig("email",e.target.value)} placeholder="naam@franssen.be" />
+                </div>
+              )}
+              <div className="veld-rij">
+                <div className="veld-groep">
+                  <label className="veld-label">Rol</label>
+                  <select className="fk-input" value={velden.role} onChange={e=>wijzig("role",e.target.value)}>
+                    {FK_DATA.ROLES.map(r=><option key={r} value={r}>{ROLE_LABELS_FULL[r]}</option>)}
+                  </select>
+                </div>
+                <div className="veld-groep">
+                  <label className="veld-label">Toonzaal</label>
+                  <select className="fk-input" value={velden.showroom} onChange={e=>wijzig("showroom",e.target.value)}>
+                    {FK_DATA.SHOWROOMS.map(s=><option key={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="veld-groep">
+                <label className="veld-label">{editUser ? "Nieuw wachtwoord (leeg = ongewijzigd)" : "Wachtwoord"}</label>
+                <input className="fk-input" type="password" value={velden.wachtwoord} onChange={e=>wijzig("wachtwoord",e.target.value)} placeholder={editUser ? "Laat leeg om niet te wijzigen" : "Wachtwoord"} />
+              </div>
+              {fout && <p className="veld-fout">{fout}</p>}
+              <div className="sidebar-acties-rij">
+                <button className="btn btn-secondary" onClick={annuleer}>Annuleren</button>
+                <button className="btn btn-primary" onClick={slaOp}>{editUser ? "Opslaan" : "Aanmaken"}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1348,7 +1589,7 @@ function ImportBevestigingModal({ data, onBevestig, onAnnuleer }) {
 }
 
 function App() {
-  const [auth,       setAuth]       = useState(()=>FK_DATA.isAuthenticated());
+  const [user,       setUser]       = useState(()=>FK_DATA.currentUser());
   const [tab,        setTab]        = useState("kanban");
   const [records,    setRecords]    = useState(()=>FK_DATA.getAll());
   const [walkins,    setWalkins]    = useState(()=>FK_DATA.getWalkins());
@@ -1357,6 +1598,7 @@ function App() {
   const [nieuwModal, setNieuwModal] = useState(false);
   const [importData, setImportData] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [usersOpen,  setUsersOpen]  = useState(false);
 
   const refresh   = useCallback(()=>{setRecords(FK_DATA.getAll());setWalkins(FK_DATA.getWalkins());},[]);
   const showToast = useCallback((t)=>setToast(t),[]);
@@ -1367,14 +1609,16 @@ function App() {
     return ()=>document.removeEventListener("keydown",onKey);
   },[]);
 
-  const openDossier = useCallback((id)=>{setTab("kanban");setSidebar(id);},[]);
-
-  const handleLogin    = ()=>setAuth(true);
-  const handleLogout   = ()=>{FK_DATA.logout();setAuth(false);};
+  const openDossier  = useCallback((id)=>{setTab("kanban");setSidebar(id);},[]);
+  const handleLogin  = (u)=>{setUser(u); refresh();};
+  const handleLogout = ()=>{FK_DATA.logout();setUser(null);};
   const handleTabChange = (t)=>{setTab(t);setSidebar(null);};
 
+  // Records gefilterd op rol van huidige gebruiker
+  const gefilterd = useMemo(()=>FK_DATA.filterByRole(records, user), [records, user]);
+
   const handleExport = ()=>{
-    const r=FK_DATA.exportExcel(records);
+    const r=FK_DATA.exportExcel(gefilterd);
     if (!r.ok) showToast({type:"fout",bericht:r.error}); else showToast({type:"succes",bericht:"Excel gedownload."});
   };
 
@@ -1391,16 +1635,17 @@ function App() {
     setImportData(null);
   };
 
-  if (!auth) return <LoginScreen onLogin={handleLogin} />;
+  if (!user) return <LoginScreen onLogin={handleLogin} />;
 
   return (
     <div className="app">
       <Nav tab={tab} onTabChange={handleTabChange} onNieuw={()=>setNieuwModal(true)}
-        onExport={handleExport} onImport={handleImport} onLogout={handleLogout} onSearch={()=>setSearchOpen(true)} />
+        onExport={handleExport} onImport={handleImport} onLogout={handleLogout}
+        onSearch={()=>setSearchOpen(true)} onGebruikers={()=>setUsersOpen(true)} user={user} />
 
-      {tab==="kanban"  && <KanbanScreen  records={records} onRefresh={refresh} onToast={showToast} sidebar={sidebar} setSidebar={setSidebar} />}
-      {tab==="vandaag" && <TodayView     records={records} onRefresh={refresh} onToast={showToast} sidebar={sidebar} setSidebar={setSidebar} />}
-      {tab==="analyse" && <AnalyseScreen records={records} walkins={walkins} onWalkin={refresh} onToast={showToast} />}
+      {tab==="kanban"  && <KanbanScreen  records={gefilterd} onRefresh={refresh} onToast={showToast} sidebar={sidebar} setSidebar={setSidebar} />}
+      {tab==="vandaag" && <TodayView     records={gefilterd} onRefresh={refresh} onToast={showToast} sidebar={sidebar} setSidebar={setSidebar} />}
+      {tab==="analyse" && <AnalyseScreen records={gefilterd} walkins={walkins} onWalkin={refresh} onToast={showToast} user={user} />}
 
       {nieuwModal && (
         <NieuwDossierModal
@@ -1408,8 +1653,9 @@ function App() {
           onOpslaan={(id)=>{setNieuwModal(false);refresh();setTab("kanban");setSidebar(id);showToast({type:"succes",bericht:"Nieuw dossier aangemaakt."});}}
           onOpenBestaand={openDossier} onToast={showToast} />
       )}
+      {usersOpen  && <UsersAdminModal onSluit={()=>setUsersOpen(false)} onToast={showToast} />}
       {importData && <ImportBevestigingModal data={importData} onBevestig={bevestigImport} onAnnuleer={()=>setImportData(null)} />}
-      {searchOpen && <GlobalSearch onSluit={()=>setSearchOpen(false)} onOpenDossier={openDossier} />}
+      {searchOpen && <GlobalSearch onSluit={()=>setSearchOpen(false)} onOpenDossier={openDossier} user={user} />}
       <Toast toast={toast} onDismiss={()=>setToast(null)} />
     </div>
   );

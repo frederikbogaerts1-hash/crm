@@ -1994,3 +1994,209 @@ select.filter-select {
 @media (max-width: 640px) {
   .sidebar { width: 100vw; max-height: 100dvh; border-radius: 0; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   WIDE ANALYSE SCREEN
+   ════════════════════════════════════════════════════════════ */
+.analyse-scherm--wide {
+  max-width: none;
+  padding: 32px 40px;
+}
+
+.analyse-grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  align-items: start;
+}
+
+.stat-getal-waarschuwing {
+  color: var(--waarschuwing) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   WALK-IN WIDGET
+   ════════════════════════════════════════════════════════════ */
+.walkin-widget {
+  background: var(--wit);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.walkin-telrij {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.walkin-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  background: var(--achtergrond);
+  border-radius: var(--radius);
+  padding: 16px 8px;
+}
+
+.walkin-getal {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.walkin-stat-label {
+  font-size: 0.82rem;
+  color: var(--subtiel);
+  font-weight: 500;
+}
+
+.walkin-knoppen {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.btn-walkin {
+  font-size: 1.3rem;
+  font-weight: 700;
+  padding: 14px 28px;
+  background: var(--accent);
+  color: var(--wit);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s;
+  flex: 1;
+}
+.btn-walkin:hover { background: var(--accent-hover); }
+
+.btn-walkin-min {
+  font-size: 1.3rem;
+  font-weight: 700;
+  padding: 14px 20px;
+}
+
+.walkin-bulk-rij {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.walkin-bulk-input {
+  width: 90px;
+  text-align: center;
+}
+
+.walkin-showroom-info {
+  font-size: 0.88rem;
+  color: var(--subtiel);
+  margin-bottom: 6px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   LOGIN WISSEL & BTN-TEKST
+   ════════════════════════════════════════════════════════════ */
+.login-wissel {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--subtiel);
+  margin-top: 16px;
+}
+
+.btn-tekst {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-family: inherit;
+}
+.btn-tekst:hover { color: var(--accent-hover); }
+
+/* ════════════════════════════════════════════════════════════
+   NAV USER INFO
+   ════════════════════════════════════════════════════════════ */
+.nav-user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+  margin-right: 4px;
+}
+
+.nav-user-naam {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--tekst);
+}
+
+.nav-user-role {
+  font-size: 0.75rem;
+  color: var(--subtiel);
+}
+
+/* ════════════════════════════════════════════════════════════
+   USERS ADMIN MODAL
+   ════════════════════════════════════════════════════════════ */
+.modal-breed {
+  max-width: 720px;
+  width: 95vw;
+}
+
+.users-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.users-tabel th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--subtiel);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 10px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.users-tabel td {
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.users-email {
+  color: var(--subtiel);
+  font-size: 0.85rem;
+}
+
+.users-role-badge {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.users-acties {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.users-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
