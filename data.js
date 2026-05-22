@@ -200,8 +200,8 @@ const FK_DATA = (() => {
 
   const MOCK_USERS = [
     { id: "user-001", email: "frederik.bogaerts@franssen.be", naam: "Frederik Bogaerts", role: "salesmanager",           showroom: "Geel",   wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" },
-    { id: "user-002", email: "lisa.schulpe@franssen.be",      naam: "Lisa Schulpe",      role: "toonzaalverantwoordelijke", showroom: "Geel", wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" },
-    { id: "user-003", email: "pieter.beerten@franssen.be",    naam: "Pieter Beerten",    role: "verkoper",                showroom: "Geel",   wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" }
+    { id: "user-002", email: "lisa.schulpe@franssen.be",      naam: "Lisa Schulpe",      role: "verkoper",                  showroom: "Geel", wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" },
+    { id: "user-003", email: "pieter.beerten@franssen.be",    naam: "Pieter Beerten",    role: "toonzaalverantwoordelijke", showroom: "Geel",   wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" }
   ];
 
   /* ── Helpers ───────────────────────────────────────────────── */
@@ -321,9 +321,14 @@ const FK_DATA = (() => {
     try { return JSON.parse(localStorage.getItem(USERS_KEY) || "null"); }
     catch { return null; }
   };
+  const USERS_VERSION = "v2"; // bump to force re-seed mock users
   const initUsers = () => {
-    if (!getUsersRaw()) {
-      localStorage.setItem(USERS_KEY, JSON.stringify(MOCK_USERS));
+    const raw = getUsersRaw();
+    if (!raw || localStorage.getItem(USERS_KEY + "_v") !== USERS_VERSION) {
+      // Bewaar eventuele extra (niet-mock) gebruikers; overschrijf mock users
+      const extra = raw ? raw.filter(u => !MOCK_USERS.find(m => m.id === u.id)) : [];
+      localStorage.setItem(USERS_KEY, JSON.stringify([...MOCK_USERS, ...extra]));
+      localStorage.setItem(USERS_KEY + "_v", USERS_VERSION);
     }
   };
   const getUsers = () => { initUsers(); return getUsersRaw() || []; };
