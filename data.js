@@ -1,6 +1,7 @@
 /* ============================================================
-   FRANSSEN KEUKENS — DATA LAAG v4
+   FRANSSEN KEUKENS — DATA LAAG v5
    8-stage pipeline, taken, zoeken, duplicaatdetectie, rollen.
+   Supabase cloud sync (hybrid: localStorage cache + cloud).
    window.FK_DATA is het enige aanspreekpunt vanuit index.html.
    ============================================================ */
 
@@ -33,7 +34,6 @@ const MIGRATIE_MAP = {
   "Verloren":           "Verloren"
 };
 
-// Migreer oude adviseurs/showrooms naar nieuwe ploeg
 const ADVISEUR_MIGRATIE = {
   "Jan Franssen":    "Frederik Bogaerts",
   "Sophie Maes":     "Lisa Schulpe",
@@ -54,6 +54,38 @@ const FK_DATA = (() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   })();
+
+  /* ── Supabase ──────────────────────────────────────────────── */
+  const SB_URL = "https://rgiaoxbhieuitczlrmbr.supabase.co";
+  const SB_KEY = "sb_publishable_Ne-NdPV8CMBxIh-NdLOKuw_J5c__fyc";
+
+  const getSb = () => {
+    if (!window._sbClient && window.supabase) {
+      window._sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+    }
+    return window._sbClient || null;
+  };
+
+  const sbUpsert = (table, row) => {
+    const sb = getSb(); if (!sb) return;
+    sb.from(table).upsert(row).then(({ error }) => {
+      if (error) console.warn(`[SB] ${table} upsert:`, error.message);
+    });
+  };
+
+  const sbDelete = (table, id) => {
+    const sb = getSb(); if (!sb) return;
+    sb.from(table).delete().eq("id", id).then(({ error }) => {
+      if (error) console.warn(`[SB] ${table} delete:`, error.message);
+    });
+  };
+
+  const sbSyncWalkins = (walkins) => {
+    const sb = getSb(); if (!sb) return;
+    sb.from("walkins").delete().not("id", "is", null)
+      .then(() => walkins.length ? sb.from("walkins").insert(walkins.map(w => ({ data: w }))) : null)
+      .catch(e => console.warn("[SB] walkins sync:", e));
+  };
 
   /* ── Mock records (seeded eenmalig) ──────────────────────── */
   const MOCK_RECORDS = [
@@ -191,7 +223,6 @@ const FK_DATA = (() => {
 
   /* Mock users */
   const hashWw = (ww) => {
-    // Simpele Base64-hash — niet productie-veilig, enkel voor file:// prototype
     try { return btoa(ww + "::franssen"); } catch { return ww; }
   };
   const checkHash = (ww, hash) => {
@@ -199,9 +230,9 @@ const FK_DATA = (() => {
   };
 
   const MOCK_USERS = [
-    { id: "user-001", email: "frederik.bogaerts@franssen.be", naam: "Frederik Bogaerts", role: "salesmanager",           showroom: "Geel",   wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" },
-    { id: "user-002", email: "lisa.schulpe@franssen.be",      naam: "Lisa Schulpe",      role: "verkoper",                  showroom: "Geel", wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" },
-    { id: "user-003", email: "pieter.beerten@franssen.be",    naam: "Pieter Beerten",    role: "toonzaalverantwoordelijke", showroom: "Geel",   wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" }
+    { id: "user-001", email: "frederik.bogaerts@franssen.be", naam: "Frederik Bogaerts", role: "salesmanager",           showroom: "Geel", wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" },
+    { id: "user-002", email: "lisa.schulpe@franssen.be",      naam: "Lisa Schulpe",      role: "verkoper",               showroom: "Geel", wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" },
+    { id: "user-003", email: "pieter.beerten@franssen.be",    naam: "Pieter Beerten",    role: "toonzaalverantwoordelijke", showroom: "Geel", wachtwoordHash: hashWw("franssen2026"), aangemaakt: "2026-01-01T00:00:00.000Z" }
   ];
 
   /* ── Helpers ───────────────────────────────────────────────── */
@@ -275,7 +306,9 @@ const FK_DATA = (() => {
     all[idx] = { ...all[idx], bestanden: [...(all[idx].bestanden || []), meta] };
     const saveResult = saveSafe(STORAGE_KEY, all);
     if (!saveResult.ok) return Promise.resolve(saveResult);
-    return idbPut(id, file).then(() => ({ ok: true, meta })).catch(e => ({ ok: false, error: `Bestand opslaan mislukt: ${e.message}` }));
+    return idbPut(id, file)
+      .then(() => { sbUpsert("dossiers", { id: all[idx].id, data: all[idx] }); return { ok: true, meta }; })
+      .catch(e => ({ ok: false, error: `Bestand opslaan mislukt: ${e.message}` }));
   };
   const getFileBlob  = (fileId)                => idbGet(fileId);
   const renameFile   = (dossierId, fileId, n)  => {
@@ -283,7 +316,9 @@ const FK_DATA = (() => {
     const idx = all.findIndex(r => r.id === dossierId);
     if (idx === -1) return { ok: false, error: "Dossier niet gevonden." };
     all[idx] = { ...all[idx], bestanden: (all[idx].bestanden || []).map(b => b.id === fileId ? { ...b, naam: n } : b) };
-    return saveSafe(STORAGE_KEY, all);
+    const result = saveSafe(STORAGE_KEY, all);
+    if (result.ok) sbUpsert("dossiers", { id: all[idx].id, data: all[idx] });
+    return result;
   };
   const deleteFile   = (dossierId, fileId)     => {
     const all = getAllRaw();
@@ -292,7 +327,9 @@ const FK_DATA = (() => {
     all[idx] = { ...all[idx], bestanden: (all[idx].bestanden || []).filter(b => b.id !== fileId) };
     const saveResult = saveSafe(STORAGE_KEY, all);
     if (!saveResult.ok) return Promise.resolve(saveResult);
-    return idbDelete(fileId).then(() => ({ ok: true })).catch(() => ({ ok: true }));
+    return idbDelete(fileId)
+      .then(() => { sbUpsert("dossiers", { id: all[idx].id, data: all[idx] }); return { ok: true }; })
+      .catch(() => { sbUpsert("dossiers", { id: all[idx].id, data: all[idx] }); return { ok: true }; });
   };
 
   /* ── Migratie ──────────────────────────────────────────────── */
@@ -306,7 +343,6 @@ const FK_DATA = (() => {
     };
     if (typeof base.offerteprijs === "string") base.offerteprijs = parseEuro(base.offerteprijs);
     if (typeof base.budget       === "string") base.budget       = parseEuro(base.budget);
-    // Migreer oude adviseurs/showrooms
     if (ADVISEUR_MIGRATIE[base.adviseur]) base.adviseur = ADVISEUR_MIGRATIE[base.adviseur];
     if (SHOWROOM_MIGRATIE[base.showroom]) base.showroom = SHOWROOM_MIGRATIE[base.showroom];
     return base;
@@ -321,11 +357,10 @@ const FK_DATA = (() => {
     try { return JSON.parse(localStorage.getItem(USERS_KEY) || "null"); }
     catch { return null; }
   };
-  const USERS_VERSION = "v2"; // bump to force re-seed mock users
+  const USERS_VERSION = "v2";
   const initUsers = () => {
     const raw = getUsersRaw();
     if (!raw || localStorage.getItem(USERS_KEY + "_v") !== USERS_VERSION) {
-      // Bewaar eventuele extra (niet-mock) gebruikers; overschrijf mock users
       const extra = raw ? raw.filter(u => !MOCK_USERS.find(m => m.id === u.id)) : [];
       localStorage.setItem(USERS_KEY, JSON.stringify([...MOCK_USERS, ...extra]));
       localStorage.setItem(USERS_KEY + "_v", USERS_VERSION);
@@ -349,6 +384,7 @@ const FK_DATA = (() => {
     const all = getUsers();
     all.push(nieuw);
     const r = saveSafe(USERS_KEY, all);
+    if (r.ok) sbUpsert("crm_users", { id: nieuw.id, data: nieuw });
     return r.ok ? { ok: true, user: nieuw } : r;
   };
   const updateUser = (id, patch) => {
@@ -357,10 +393,14 @@ const FK_DATA = (() => {
     if (idx === -1) return { ok: false, error: "Gebruiker niet gevonden." };
     if (patch.wachtwoord) { patch = { ...patch, wachtwoordHash: hashWw(patch.wachtwoord) }; delete patch.wachtwoord; }
     all[idx] = { ...all[idx], ...patch };
-    return saveSafe(USERS_KEY, all);
+    const result = saveSafe(USERS_KEY, all);
+    if (result.ok) sbUpsert("crm_users", { id: all[idx].id, data: all[idx] });
+    return result;
   };
   const deleteUser = (id) => {
-    return saveSafe(USERS_KEY, getUsers().filter(u => u.id !== id));
+    const result = saveSafe(USERS_KEY, getUsers().filter(u => u.id !== id));
+    if (result.ok) sbDelete("crm_users", id);
+    return result;
   };
 
   /* ── Auth ──────────────────────────────────────────────────── */
@@ -381,7 +421,6 @@ const FK_DATA = (() => {
       const raw = sessionStorage.getItem(AUTH_KEY);
       if (!raw) return null;
       const u = JSON.parse(raw);
-      // Sync met meest recente user data
       const fresh = getUserByEmail(u.email);
       if (fresh) { sessionStorage.setItem(AUTH_KEY, JSON.stringify(fresh)); return fresh; }
       return u;
@@ -389,14 +428,17 @@ const FK_DATA = (() => {
   };
   const logout = () => sessionStorage.removeItem(AUTH_KEY);
 
-  /* Backwards-compat (oud wachtwoord scherm was plain string) */
   const checkPassword = (pw) => pw === "franssen2026";
   const isAuthenticated = () => !!currentUser();
-  const setAuthenticated = () => {}; // vervangen door login()
+  const setAuthenticated = () => {};
 
   /* ── Records ───────────────────────────────────────────────── */
   const getAllRaw = () => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+    catch { return []; }
+  };
+  const getWalkinsRaw = () => {
+    try { return JSON.parse(localStorage.getItem(WALKIN_KEY) || "[]"); }
     catch { return []; }
   };
   const initMockData = () => {
@@ -427,6 +469,7 @@ const FK_DATA = (() => {
       ...velden
     };
     const result = saveSafe(STORAGE_KEY, [nieuw, ...all]);
+    if (result.ok) sbUpsert("dossiers", { id: nieuw.id, data: nieuw });
     return result.ok ? { ok: true, record: nieuw } : result;
   };
   const update = (id, velden) => {
@@ -434,15 +477,23 @@ const FK_DATA = (() => {
     const idx = all.findIndex(r => r.id === id);
     if (idx === -1) return { ok: false, error: "Dossier niet gevonden." };
     all[idx] = { ...all[idx], ...velden };
-    return saveSafe(STORAGE_KEY, all);
+    const result = saveSafe(STORAGE_KEY, all);
+    if (result.ok) sbUpsert("dossiers", { id: all[idx].id, data: all[idx] });
+    return result;
   };
-  const del = (id) => saveSafe(STORAGE_KEY, getAllRaw().filter(r => r.id !== id));
+  const del = (id) => {
+    const result = saveSafe(STORAGE_KEY, getAllRaw().filter(r => r.id !== id));
+    if (result.ok) sbDelete("dossiers", id);
+    return result;
+  };
   const addLogEntry = (id, type, tekst) => {
     const all = getAllRaw();
     const idx = all.findIndex(r => r.id === id);
     if (idx === -1) return { ok: false, error: "Dossier niet gevonden." };
     all[idx] = { ...all[idx], logboek: [...(all[idx].logboek || []), { timestamp: new Date().toISOString(), type, tekst }] };
-    return saveSafe(STORAGE_KEY, all);
+    const result = saveSafe(STORAGE_KEY, all);
+    if (result.ok) sbUpsert("dossiers", { id: all[idx].id, data: all[idx] });
+    return result;
   };
 
   /* ── Rolfilter ─────────────────────────────────────────────── */
@@ -451,7 +502,6 @@ const FK_DATA = (() => {
     if (user.role === "salesmanager") return records;
     if (user.role === "toonzaalverantwoordelijke")
       return records.filter(r => r.showroom === user.showroom);
-    // verkoper: eigen dossiers
     return records.filter(r => r.adviseur === user.naam);
   };
 
@@ -490,21 +540,27 @@ const FK_DATA = (() => {
       vervaldatum: taak.vervaldatum || "", afgerond: false, adviseur: taak.adviseur || "",
       aangemaakt: new Date().toISOString() };
     all[idx] = { ...all[idx], taken: [...(all[idx].taken || []), nieuweTaak] };
-    return saveSafe(STORAGE_KEY, all);
+    const result = saveSafe(STORAGE_KEY, all);
+    if (result.ok) sbUpsert("dossiers", { id: all[idx].id, data: all[idx] });
+    return result;
   };
   const updateTask = (dossierId, taakId, updates) => {
     const all = getAllRaw();
     const idx = all.findIndex(r => r.id === dossierId);
     if (idx === -1) return { ok: false, error: "Dossier niet gevonden." };
     all[idx] = { ...all[idx], taken: (all[idx].taken || []).map(t => t.id === taakId ? { ...t, ...updates } : t) };
-    return saveSafe(STORAGE_KEY, all);
+    const result = saveSafe(STORAGE_KEY, all);
+    if (result.ok) sbUpsert("dossiers", { id: all[idx].id, data: all[idx] });
+    return result;
   };
   const deleteTask = (dossierId, taakId) => {
     const all = getAllRaw();
     const idx = all.findIndex(r => r.id === dossierId);
     if (idx === -1) return { ok: false, error: "Dossier niet gevonden." };
     all[idx] = { ...all[idx], taken: (all[idx].taken || []).filter(t => t.id !== taakId) };
-    return saveSafe(STORAGE_KEY, all);
+    const result = saveSafe(STORAGE_KEY, all);
+    if (result.ok) sbUpsert("dossiers", { id: all[idx].id, data: all[idx] });
+    return result;
   };
 
   /* ── Walk-ins ──────────────────────────────────────────────── */
@@ -525,12 +581,13 @@ const FK_DATA = (() => {
         adviseurNaam:  user ? user.naam  : null
       });
     }
-    return saveSafe(WALKIN_KEY, all);
+    const result = saveSafe(WALKIN_KEY, all);
+    if (result.ok) sbSyncWalkins(all);
+    return result;
   };
   const removeLastWalkin = (user) => {
     const all = getWalkins();
     const vandaagStr = new Date().toISOString().slice(0, 10);
-    // Zoek laatste walk-in van vandaag van deze user
     for (let i = all.length - 1; i >= 0; i--) {
       const isVandaag = all[i].timestamp.slice(0, 10) === vandaagStr;
       const isEigenaar = user
@@ -538,7 +595,9 @@ const FK_DATA = (() => {
         : true;
       if (isVandaag && isEigenaar) {
         all.splice(i, 1);
-        return saveSafe(WALKIN_KEY, all);
+        const result = saveSafe(WALKIN_KEY, all);
+        if (result.ok) sbSyncWalkins(all);
+        return result;
       }
     }
     return { ok: false, error: "Geen walk-in van vandaag gevonden om te verwijderen." };
@@ -562,7 +621,7 @@ const FK_DATA = (() => {
   const walkinsDezeWeek = (walkins, user) => {
     const lijst = user ? walkinsFiltered(walkins, user) : walkins;
     const nu    = new Date();
-    const dag   = nu.getDay() === 0 ? 6 : nu.getDay() - 1; // Ma=0
+    const dag   = nu.getDay() === 0 ? 6 : nu.getDay() - 1;
     const start = new Date(nu); start.setHours(0,0,0,0); start.setDate(start.getDate() - dag);
     return lijst.filter(w => new Date(w.timestamp) >= start).length;
   };
@@ -656,12 +715,63 @@ const FK_DATA = (() => {
     reader.readAsArrayBuffer(file);
   });
 
+  /* ── Cloud sync ────────────────────────────────────────────── */
+  const syncFromCloud = async () => {
+    const sb = getSb();
+    if (!sb) return;
+    try {
+      const [dr, wr, ur] = await Promise.all([
+        sb.from("dossiers").select("id, data"),
+        sb.from("walkins").select("data"),
+        sb.from("crm_users").select("id, data")
+      ]);
+
+      // Dossiers
+      if (!dr.error) {
+        if (dr.data.length > 0) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(dr.data.map(r => r.data)));
+        } else {
+          const local = getAllRaw();
+          const seed  = local.length > 0 ? local : MOCK_RECORDS;
+          if (!local.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+          await sb.from("dossiers").upsert(seed.map(r => ({ id: r.id, data: r })));
+        }
+      }
+
+      // Walkins
+      if (!wr.error) {
+        if (wr.data.length > 0) {
+          localStorage.setItem(WALKIN_KEY, JSON.stringify(wr.data.map(r => r.data)));
+        } else {
+          const local = getWalkinsRaw();
+          const seed  = local.length > 0 ? local : MOCK_WALKINS;
+          if (!local.length) localStorage.setItem(WALKIN_KEY, JSON.stringify(seed));
+          if (seed.length) await sb.from("walkins").insert(seed.map(w => ({ data: w })));
+        }
+      }
+
+      // Users
+      if (!ur.error) {
+        if (ur.data.length > 0) {
+          localStorage.setItem(USERS_KEY, JSON.stringify(ur.data.map(r => r.data)));
+          localStorage.setItem(USERS_KEY + "_v", USERS_VERSION);
+        } else {
+          initUsers();
+          const local = getUsersRaw() || [];
+          await sb.from("crm_users").upsert(local.map(u => ({ id: u.id, data: u })));
+        }
+      }
+    } catch (e) {
+      console.warn("[SB] syncFromCloud fout:", e.message || e);
+    }
+  };
+
   /* ── Publieke API ──────────────────────────────────────────── */
   return {
     STATUSSEN, ADVISEURS, SHOWROOMS, ROLES, EMAIL_DOMAIN,
     // Auth & users
     login, signup, currentUser, logout,
-    checkPassword, isAuthenticated, setAuthenticated, // backwards compat
+    checkPassword, isAuthenticated, setAuthenticated,
     users: { list: getUsers, getByEmail: getUserByEmail, add: addUser, update: updateUser, delete: deleteUser },
     // Records
     getAll, getAllRaw, add, update, delete: del, addLogEntry,
@@ -681,7 +791,9 @@ const FK_DATA = (() => {
     // Overig
     saveSafe,
     addFile, getFileBlob, renameFile, deleteFile, fmtBytes,
-    parseEuro, fmtEuro
+    parseEuro, fmtEuro,
+    // Cloud
+    syncFromCloud
   };
 })();
 
