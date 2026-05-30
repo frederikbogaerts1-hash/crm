@@ -171,32 +171,35 @@ function StatusBadge({ status }) {
   return <span className={`status-badge status-${slug}`}>{status}</span>;
 }
 
+function StatusChip({ status }) {
+  const slug = (status || "")
+    .toLowerCase()
+    .replace(/[àáâãä]/g,"a").replace(/[èéêë]/g,"e")
+    .replace(/[ìíîï]/g,"i").replace(/[òóôõö]/g,"o").replace(/[ùúûü]/g,"u")
+    .replace(/ë/g,"e").replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
+  return <span className={`status-chip status-chip-${slug}`}>{status}</span>;
+}
+
+function Avatar({ naam, small }) {
+  const initials = (naam||"?").split(" ").filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("");
+  const COLORS = ["#8b6f47","#2d5016","#2a5980","#7a5a00","#5c2a7a","#8a4400"];
+  const color  = COLORS[(naam||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0) % COLORS.length];
+  return <span className={`avatar${small?" avatar-sm":""}`} style={{background:color}}>{initials}</span>;
+}
+
 function LoginScreen({ onLogin }) {
-  const [modus,    setModus]    = useState("login");
-  const [email,    setEmail]    = useState("");
-  const [ww,       setWw]       = useState("");
-  const [naam,     setNaam]     = useState("");
-  const [showroom, setShowroom] = useState("Geel");
-  const [fout,     setFout]     = useState("");
+  const [email, setEmail] = useState("");
+  const [ww,    setWw]    = useState("");
+  const [fout,  setFout]  = useState("");
+  const [bezig, setBezig] = useState(false);
 
-  const reset = () => { setFout(""); setEmail(""); setWw(""); setNaam(""); };
-
-  const submitLogin = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    const r = FK_DATA.login(email.trim(), ww);
+    setBezig(true); setFout("");
+    const r = await FK_DATA.login(email.trim(), ww);
+    setBezig(false);
     if (r.ok) onLogin(r.user);
     else { setFout(r.error); setWw(""); }
-  };
-
-  const submitSignup = (e) => {
-    e.preventDefault();
-    if (!naam.trim()) { setFout("Naam is verplicht."); return; }
-    if (!ww) { setFout("Kies een wachtwoord."); return; }
-    const r = FK_DATA.signup(email.trim(), naam.trim(), ww, showroom);
-    if (r.ok) {
-      const lr = FK_DATA.login(email.trim(), ww);
-      if (lr.ok) onLogin(lr.user);
-    } else { setFout(r.error); }
   };
 
   return (
@@ -207,66 +210,25 @@ function LoginScreen({ onLogin }) {
           <span className="login-logo-keukens"> Keukens</span>
         </div>
         <p className="login-subtitel">Verkoopadministratie</p>
-
-        {modus === "login" ? (
-          <form onSubmit={submitLogin}>
-            <div className="veld-groep">
-              <label className="veld-label" htmlFor="l-email">E-mailadres</label>
-              <input id="l-email" type="email" className="fk-input" value={email}
-                onChange={e => { setEmail(e.target.value); setFout(""); }}
-                placeholder="naam@franssen.be" autoFocus />
-            </div>
-            <div className="veld-groep">
-              <label className="veld-label" htmlFor="l-ww">Wachtwoord</label>
-              <input id="l-ww" type="password" className="fk-input" value={ww}
-                onChange={e => { setWw(e.target.value); setFout(""); }}
-                placeholder="Wachtwoord" />
-            </div>
-            {fout && <p className="veld-fout">{fout}</p>}
-            <button type="submit" className="btn btn-primary btn-volledig">Aanmelden</button>
-            <p className="login-wissel">
-              Nog geen account?{" "}
-              <button type="button" className="btn-tekst" onClick={() => { setModus("signup"); reset(); }}>
-                Nieuw account aanmaken
-              </button>
-            </p>
-          </form>
-        ) : (
-          <form onSubmit={submitSignup}>
-            <div className="veld-groep">
-              <label className="veld-label" htmlFor="s-naam">Volledige naam</label>
-              <input id="s-naam" className="fk-input" value={naam}
-                onChange={e => { setNaam(e.target.value); setFout(""); }}
-                placeholder="Voornaam Familienaam" autoFocus />
-            </div>
-            <div className="veld-groep">
-              <label className="veld-label" htmlFor="s-email">E-mailadres (@franssen.be)</label>
-              <input id="s-email" type="email" className="fk-input" value={email}
-                onChange={e => { setEmail(e.target.value); setFout(""); }}
-                placeholder="naam@franssen.be" />
-            </div>
-            <div className="veld-groep">
-              <label className="veld-label" htmlFor="s-showroom">Toonzaal</label>
-              <select id="s-showroom" className="fk-input" value={showroom} onChange={e => setShowroom(e.target.value)}>
-                {FK_DATA.SHOWROOMS.map(s => <option key={s}>{s}</option>)}
-              </select>
-            </div>
-            <div className="veld-groep">
-              <label className="veld-label" htmlFor="s-ww">Wachtwoord</label>
-              <input id="s-ww" type="password" className="fk-input" value={ww}
-                onChange={e => { setWw(e.target.value); setFout(""); }}
-                placeholder="Kies een wachtwoord" />
-            </div>
-            {fout && <p className="veld-fout">{fout}</p>}
-            <button type="submit" className="btn btn-primary btn-volledig">Account aanmaken</button>
-            <p className="login-wissel">
-              Al een account?{" "}
-              <button type="button" className="btn-tekst" onClick={() => { setModus("login"); reset(); }}>
-                Aanmelden
-              </button>
-            </p>
-          </form>
-        )}
+        <form onSubmit={submit}>
+          <div className="veld-groep">
+            <label className="veld-label" htmlFor="l-email">E-mailadres</label>
+            <input id="l-email" type="email" className="fk-input" value={email}
+              onChange={e => { setEmail(e.target.value); setFout(""); }}
+              placeholder="naam@franssen.be" autoFocus />
+          </div>
+          <div className="veld-groep">
+            <label className="veld-label" htmlFor="l-ww">Wachtwoord</label>
+            <input id="l-ww" type="password" className="fk-input" value={ww}
+              onChange={e => { setWw(e.target.value); setFout(""); }}
+              placeholder="Wachtwoord" />
+          </div>
+          {fout && <p className="veld-fout">{fout}</p>}
+          <button type="submit" className="btn btn-primary btn-volledig" disabled={bezig}>
+            {bezig ? "Aanmelden…" : "Aanmelden"}
+          </button>
+          <p className="login-info">Geen account? Vraag jouw beheerder om een account aan te maken.</p>
+        </form>
       </div>
     </div>
   );
@@ -372,7 +334,12 @@ function KlantKaart({ record, onKlik, onDragStart }) {
         {openTaken > 0 && <span className="kaart-taken-badge" title={`${openTaken} open taak${openTaken>1?"en":""}`}>{openTaken}</span>}
       </div>
       <div className="kaart-meta">
-        {record.adviseur && <span className="kaart-adviseur">{record.adviseur.split(" ")[0]}</span>}
+        {record.adviseur && (
+          <span className="avatar-rij">
+            <Avatar naam={record.adviseur} small />
+            <span className="kaart-adviseur">{record.adviseur.split(" ")[0]}</span>
+          </span>
+        )}
         {record.showroom  && <span className="kaart-bron">{record.showroom}</span>}
         {!record.adviseur && record.bron && <span className="kaart-bron">{record.bron}</span>}
       </div>
@@ -383,6 +350,7 @@ function KlantKaart({ record, onKlik, onDragStart }) {
           {FK_DATA.fmtDatetime(record.volgende_actie)}
         </div>
       )}
+      <div style={{marginTop:"6px"}}><StatusChip status={record.status} /></div>
     </div>
   );
 }
@@ -690,7 +658,7 @@ function TabBestanden({ record, onRefresh, onToast }) {
   };
 
   const openBestand = async (meta) => {
-    const blob = await FK_DATA.getFileBlob(meta.id);
+    const blob = await FK_DATA.getFileBlob(meta);
     if (!blob) { onToast({ type: "fout", bericht: "Bestand niet gevonden. Mogelijk verwijderd of op een ander apparaat geüpload." }); return; }
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank");
@@ -698,7 +666,7 @@ function TabBestanden({ record, onRefresh, onToast }) {
   };
 
   const downloadBestand = async (meta) => {
-    const blob = await FK_DATA.getFileBlob(meta.id);
+    const blob = await FK_DATA.getFileBlob(meta);
     if (!blob) { onToast({ type: "fout", bericht: "Bestand niet gevonden." }); return; }
     const url = URL.createObjectURL(blob);
     const a   = document.createElement("a");
@@ -740,41 +708,41 @@ function TabBestanden({ record, onRefresh, onToast }) {
       >
         <div className="dropzone-icoon">{bezig ? "⏳" : "📁"}</div>
         <p className="dropzone-tekst">{bezig ? "Bezig met uploaden…" : "Sleep bestanden hierheen of klik om te kiezen"}</p>
-        <p className="dropzone-sub">PDF-plannen, stuklijsten, afbeeldingen — max 25 MB per bestand</p>
-        <input ref={fileRef} type="file" multiple style={{ display: "none" }}
+        <p className="dropzone-sub">JPG, PNG of PDF — max 15 MB per bestand</p>
+        <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,application/pdf" style={{ display: "none" }}
           onChange={e => { verwerkBestanden(e.target.files); e.target.value = ""; }} />
       </div>
 
       {bestanden.length > 0 && (
-        <div className="bestanden-lijst">
-          {[...bestanden].reverse().map(meta => (
-            <div key={meta.id} className="bestand-rij">
-              <div className="bestand-icoon">{bestandIcoon(meta.type)}</div>
-              <div className="bestand-info">
-                {hernoem === meta.id ? (
-                  <div className="hernoem-invoer-rij">
-                    <input className="fk-input fk-input-sm" value={hernoemWaarde}
-                      autoFocus
-                      onChange={e => setHernoemWaarde(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") slaHernoemOp(meta.id); if (e.key === "Escape") setHernoem(null); }} />
-                    <button className="btn btn-primary btn-sm" onClick={() => slaHernoemOp(meta.id)}>Opslaan</button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setHernoem(null)}>Annuleer</button>
-                  </div>
-                ) : (
-                  <div className="bestand-naam">{meta.naam}</div>
-                )}
-                <div className="bestand-meta">
-                  {FK_DATA.fmtBytes(meta.grootte)} · {FK_DATA.fmtDatum(meta.geupload)}
+        <div className="bestanden-grid">
+          {[...bestanden].reverse().map(meta => {
+            const isAfb = meta.type && meta.type.startsWith("image/");
+            const icoon = isAfb ? "🖼️" : "📄";
+            return (
+              <div key={meta.id} className="bestand-kaart">
+                <div className="bestand-kaart-icoon">{icoon}</div>
+                <div className="bestand-kaart-info">
+                  {hernoem === meta.id ? (
+                    <div className="hernoem-invoer-rij">
+                      <input className="fk-input fk-input-sm" value={hernoemWaarde} autoFocus
+                        onChange={e => setHernoemWaarde(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") slaHernoemOp(meta.id); if (e.key === "Escape") setHernoem(null); }} />
+                      <button className="btn btn-primary btn-sm" onClick={() => slaHernoemOp(meta.id)}>Opslaan</button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setHernoem(null)}>Annuleer</button>
+                    </div>
+                  ) : (
+                    <div className="bestand-kaart-naam">{meta.naam}</div>
+                  )}
+                  <div className="bestand-kaart-meta">{FK_DATA.fmtBytes(meta.grootte)} · {FK_DATA.fmtDatum(meta.geupload)}</div>
+                </div>
+                <div className="bestand-kaart-acties">
+                  <button className="btn btn-secondary btn-sm" onClick={() => downloadBestand(meta)}>Download</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => startHernoem(meta)}>Hernoemen</button>
+                  <button className="btn btn-gevaar-outline btn-sm" onClick={() => verwijderBestand(meta)}>Verwijder</button>
                 </div>
               </div>
-              <div className="bestand-acties">
-                <button className="btn btn-secondary btn-sm" onClick={() => openBestand(meta)}>Open</button>
-                <button className="btn btn-secondary btn-sm" onClick={() => downloadBestand(meta)}>Download</button>
-                <button className="btn btn-secondary btn-sm" onClick={() => startHernoem(meta)}>Hernoemen</button>
-                <button className="btn btn-gevaar-outline btn-sm" onClick={() => verwijderBestand(meta)}>Verwijder</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -1459,18 +1427,18 @@ function UsersAdminModal({ onSluit, onToast }) {
   const refresh = () => setUsers(FK_DATA.users.list());
   const wijzig  = (k,v) => setVelden(f=>({...f,[k]:v}));
 
-  const slaOp = () => {
+  const slaOp = async () => {
     setFout("");
     if (!velden.naam.trim()) { setFout("Naam is verplicht."); return; }
     if (!velden.email.trim()) { setFout("E-mail is verplicht."); return; }
     if (editUser) {
       const patch = { naam: velden.naam, role: velden.role, showroom: velden.showroom };
       if (velden.wachtwoord) patch.wachtwoord = velden.wachtwoord;
-      const r = FK_DATA.users.update(editUser.id, patch);
+      const r = await FK_DATA.users.update(editUser.id, patch);
       if (!r.ok) { setFout(r.error); return; }
       onToast({type:"succes",bericht:"Gebruiker bijgewerkt."});
     } else {
-      const r = FK_DATA.users.add({...velden});
+      const r = await FK_DATA.users.add({...velden});
       if (!r.ok) { setFout(r.error); return; }
       onToast({type:"succes",bericht:"Gebruiker aangemaakt."});
     }
@@ -1484,8 +1452,8 @@ function UsersAdminModal({ onSluit, onToast }) {
     setFout("");
   };
 
-  const verwijder = (u) => {
-    const r = FK_DATA.users.delete(u.id);
+  const verwijder = async (u) => {
+    const r = await FK_DATA.users.delete(u.id);
     if (!r.ok) onToast({type:"fout",bericht:r.error});
     else { onToast({type:"succes",bericht:"Gebruiker verwijderd."}); refresh(); }
   };
@@ -1591,10 +1559,10 @@ function ImportBevestigingModal({ data, onBevestig, onAnnuleer }) {
 }
 
 function App() {
-  const [user,       setUser]       = useState(()=>FK_DATA.currentUser());
+  const [user,       setUser]       = useState(null);
   const [tab,        setTab]        = useState("kanban");
-  const [records,    setRecords]    = useState(()=>FK_DATA.getAll());
-  const [walkins,    setWalkins]    = useState(()=>FK_DATA.getWalkins());
+  const [records,    setRecords]    = useState([]);
+  const [walkins,    setWalkins]    = useState([]);
   const [sidebar,    setSidebar]    = useState(null);
   const [toast,      setToast]      = useState(null);
   const [nieuwModal, setNieuwModal] = useState(false);
@@ -1607,7 +1575,10 @@ function App() {
   const showToast = useCallback((t)=>setToast(t),[]);
 
   useEffect(()=>{
-    FK_DATA.syncFromCloud().then(refresh).finally(()=>setCloudLoading(false));
+    FK_DATA.init().then(hasUser=>{
+      if(hasUser){setUser(FK_DATA.currentUser());refresh();}
+    }).finally(()=>setCloudLoading(false));
+    FK_DATA.onAuthChange(()=>{setUser(null);setRecords([]);setWalkins([]);});
   },[]);
 
   useEffect(()=>{
@@ -1618,7 +1589,7 @@ function App() {
 
   const openDossier  = useCallback((id)=>{setTab("kanban");setSidebar(id);},[]);
   const handleLogin  = (u)=>{setUser(u); refresh();};
-  const handleLogout = ()=>{FK_DATA.logout();setUser(null);};
+  const handleLogout = async ()=>{await FK_DATA.logout();setUser(null);setRecords([]);setWalkins([]);};
   const handleTabChange = (t)=>{setTab(t);setSidebar(null);};
 
   // Records gefilterd op rol van huidige gebruiker
@@ -1636,9 +1607,9 @@ function App() {
 
   const bevestigImport = ()=>{
     if(!importData) return;
-    const r=FK_DATA.saveSafe("fransen_crm_data",importData.records);
-    if (!r.ok) showToast({type:"fout",bericht:r.error});
-    else { refresh(); showToast({type:"succes",bericht:`${importData.aantal} dossiers geïmporteerd.`}); }
+    importData.records.forEach(r=>FK_DATA.add(r));
+    refresh();
+    showToast({type:"succes",bericht:`${importData.aantal} dossiers geïmporteerd.`});
     setImportData(null);
   };
 
