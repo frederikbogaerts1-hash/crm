@@ -287,7 +287,7 @@ function GlobalSearch({ onSluit, onOpenDossier, user }) {
 
 const ROLE_LABELS = { salesmanager: "Sales Manager", toonzaalverantwoordelijke: "Toonzaalverantw.", verkoper: "Verkoper" };
 
-function Nav({ tab, onTabChange, onNieuw, onExport, onImport, onLogout, onSearch, onGebruikers, user }) {
+function Nav({ tab, onTabChange, onNieuw, onExport, onImport, onLogout, onSearch, onGebruikers, user, overtijdTeller }) {
   const fileRef = useRef(null);
   return (
     <nav className="nav">
@@ -298,7 +298,9 @@ function Nav({ tab, onTabChange, onNieuw, onExport, onImport, onLogout, onSearch
       </div>
       <div className="nav-tabs">
         <button className={`nav-tab ${tab==="kanban"  ? "nav-tab-actief":""}`} onClick={() => onTabChange("kanban")}>Pipeline</button>
-        <button className={`nav-tab ${tab==="vandaag" ? "nav-tab-actief":""}`} onClick={() => onTabChange("vandaag")}>Vandaag</button>
+        <button className={`nav-tab ${tab==="vandaag" ? "nav-tab-actief":""}`} onClick={() => onTabChange("vandaag")}>
+          Vandaag{overtijdTeller > 0 && <span className="nav-overtijd-badge">{overtijdTeller}</span>}
+        </button>
         <button className={`nav-tab ${tab==="analyse" ? "nav-tab-actief":""}`} onClick={() => onTabChange("analyse")}>Analyse</button>
       </div>
       <div className="nav-acties">
@@ -324,14 +326,20 @@ function Nav({ tab, onTabChange, onNieuw, onExport, onImport, onLogout, onSearch
 }
 
 function KlantKaart({ record, onKlik, onDragStart }) {
-  const overtijdStatus = FK_DATA.isOvertijd(record.volgende_actie);
-  const openTaken = (record.taken||[]).filter(t=>!t.afgerond).length;
+  const overtijdStatus  = FK_DATA.isOvertijd(record.volgende_actie);
+  const openTaken       = (record.taken||[]).filter(t=>!t.afgerond).length;
+  const opvolgDagen     = FK_DATA.isOfferteOpvolgen(record);
+  const GESLOTEN        = ["Besteld","Geïnstalleerd","Service","Verloren"];
+  const agingDagen      = !GESLOTEN.includes(record.status) ? FK_DATA.dealLeeftijd(record) : 0;
   return (
-    <div className={`klant-kaart ${overtijdStatus==="overtijd"?"kaart-overtijd":""}`}
+    <div className={`klant-kaart ${overtijdStatus==="overtijd"?"kaart-overtijd":""} ${agingDagen>=30?"kaart-aging":""}`}
       draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";onDragStart(record.id);}} onClick={onKlik}>
       <div className="kaart-header">
         <div className="kaart-naam">{record.naam}</div>
-        {openTaken > 0 && <span className="kaart-taken-badge" title={`${openTaken} open taak${openTaken>1?"en":""}`}>{openTaken}</span>}
+        <div style={{display:"flex",gap:"4px",alignItems:"center"}}>
+          {opvolgDagen && <span className="kaart-opvolg-badge" title={`Offerte ${opvolgDagen} dagen geleden — opvolgen!`}>📞 {opvolgDagen}d</span>}
+          {openTaken > 0 && <span className="kaart-taken-badge" title={`${openTaken} open taak${openTaken>1?"en":""}`}>{openTaken}</span>}
+        </div>
       </div>
       <div className="kaart-meta">
         {record.adviseur && (
@@ -575,6 +583,13 @@ function TabOverzicht({ record, velden, wijzig, veldFouten, opgeslagen, overtijd
           </select>
         </div>
       </div>
+      {["Offerte","Onderhandeling","Showroombezoek"].includes(velden.status) && (
+        <div className="veld-groep">
+          <label className="veld-label" htmlFor="s-offertedatum">Offertedatum</label>
+          <input id="s-offertedatum" type="date" className="fk-input"
+            value={velden.offerte_datum} onChange={e=>wijzig("offerte_datum",e.target.value)} />
+        </div>
+      )}
       <div className="veld-groep">
         <label className="veld-label" htmlFor="s-prijs">Offerteprijs</label>
         <input id="s-prijs" className="fk-input" value={velden.offerteprijs}
@@ -873,7 +888,7 @@ function DetailSidebar({ recordId, records, onSluit, onRefresh, onToast, onVerwi
         adres:record.adres||"", adviseur:record.adviseur||"", showroom:record.showroom||"",
         bron:record.bron||"Web", offerteprijs:FK_DATA.fmtEuro(record.offerteprijs)||"", budget:FK_DATA.fmtEuro(record.budget)||"",
         materialen:record.materialen||"", volgende_actie:record.volgende_actie||"",
-        orderMaand:record.orderMaand||"", status:record.status||"Lead"
+        offerte_datum:record.offerte_datum||"", orderMaand:record.orderMaand||"", status:record.status||"Lead"
       });
       setVeldFouten({}); setOpgeslagen(false);
     }
@@ -1595,6 +1610,11 @@ function App() {
   // Records gefilterd op rol van huidige gebruiker
   const gefilterd = useMemo(()=>FK_DATA.filterByRole(records, user), [records, user]);
 
+  // Aantal overtijd + vandaag voor nav-badge
+  const overtijdTeller = useMemo(()=>
+    gefilterd.filter(r=>{const s=FK_DATA.isOvertijd(r.volgende_actie);return s==="overtijd"||s==="vandaag";}).length,
+  [gefilterd]);
+
   const handleExport = ()=>{
     const r=FK_DATA.exportExcel(gefilterd);
     if (!r.ok) showToast({type:"fout",bericht:r.error}); else showToast({type:"succes",bericht:"Excel gedownload."});
@@ -1626,7 +1646,8 @@ function App() {
     <div className="app">
       <Nav tab={tab} onTabChange={handleTabChange} onNieuw={()=>setNieuwModal(true)}
         onExport={handleExport} onImport={handleImport} onLogout={handleLogout}
-        onSearch={()=>setSearchOpen(true)} onGebruikers={()=>setUsersOpen(true)} user={user} />
+        onSearch={()=>setSearchOpen(true)} onGebruikers={()=>setUsersOpen(true)} user={user}
+        overtijdTeller={overtijdTeller} />
 
       {tab==="kanban"  && <KanbanScreen  records={gefilterd} onRefresh={refresh} onToast={showToast} sidebar={sidebar} setSidebar={setSidebar} />}
       {tab==="vandaag" && <TodayView     records={gefilterd} onRefresh={refresh} onToast={showToast} sidebar={sidebar} setSidebar={setSidebar} />}

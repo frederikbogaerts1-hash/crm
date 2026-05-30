@@ -1297,6 +1297,42 @@ select.filter-select {
   flex-shrink: 0;
 }
 
+.kaart-aging {
+  border-left: 3px solid #c8a96e;
+  background: #fdf8f0;
+}
+
+.kaart-opvolg-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  height: 20px;
+  background: #f5e6c8;
+  color: #8a5f1a;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.nav-overtijd-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  margin-left: 5px;
+  background: #c0392b;
+  color: #fff;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
 .kaart-adviseur {
   font-size: 0.72rem;
   font-weight: 600;

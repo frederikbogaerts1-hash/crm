@@ -87,23 +87,60 @@ create policy "profiles_delete_admin"
   to authenticated
   using (public.is_admin() and id <> auth.uid());
 
+-- ── HELPER: dossier zichtbaar voor huidige gebruiker ─────
+-- salesmanager ziet alles; toonzaalverantwoordelijke ziet eigen showroom;
+-- verkoper ziet enkel eigen dossiers (op naam).
+
+create or replace function public.dossier_toegang(d jsonb)
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select case (select role from public.profiles where id = auth.uid())
+    when 'salesmanager'              then true
+    when 'toonzaalverantwoordelijke' then d->>'showroom' = (select showroom from public.profiles where id = auth.uid())
+    when 'verkoper'                  then d->>'adviseur' = (select naam     from public.profiles where id = auth.uid())
+    else false
+  end;
+$$;
+
 -- ── RLS POLICIES: dossiers ────────────────────────────────
 
 drop policy if exists "dossiers_all_authenticated" on public.dossiers;
-create policy "dossiers_all_authenticated"
+drop policy if exists "dossiers_scoped"            on public.dossiers;
+create policy "dossiers_scoped"
   on public.dossiers for all
   to authenticated
-  using (true)
-  with check (true);
+  using  (public.dossier_toegang(data))
+  with check (public.dossier_toegang(data));
+
+-- ── HELPER: walkin zichtbaar voor huidige gebruiker ───────
+-- salesmanager ziet alles; toonzaalverantwoordelijke/verkoper ziet eigen showroom.
+
+create or replace function public.walkin_toegang(w jsonb)
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select case (select role from public.profiles where id = auth.uid())
+    when 'salesmanager'              then true
+    when 'toonzaalverantwoordelijke' then w->>'showroom'     = (select showroom from public.profiles where id = auth.uid())
+    when 'verkoper'                  then w->>'adviseurEmail' = (select email    from public.profiles where id = auth.uid())
+    else false
+  end;
+$$;
 
 -- ── RLS POLICIES: walkins ─────────────────────────────────
 
 drop policy if exists "walkins_all_authenticated" on public.walkins;
-create policy "walkins_all_authenticated"
+drop policy if exists "walkins_scoped"            on public.walkins;
+create policy "walkins_scoped"
   on public.walkins for all
   to authenticated
-  using (true)
-  with check (true);
+  using  (public.walkin_toegang(data))
+  with check (public.walkin_toegang(data));
 
 -- ── RLS POLICIES: logboek ─────────────────────────────────
 

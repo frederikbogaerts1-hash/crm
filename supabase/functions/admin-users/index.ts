@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -47,7 +48,7 @@ serve(async (req) => {
 
       const { data, error } = await adminClient.auth.admin.createUser({
         email:         email.trim().toLowerCase(),
-        password:      wachtwoord || "Franssen2026!",
+        password:      wachtwoord || crypto.randomUUID().replace(/-/g, "").slice(0, 16) + "Aa1!",
         email_confirm: true,
       });
       if (error) return json({ ok: false, error: error.message });

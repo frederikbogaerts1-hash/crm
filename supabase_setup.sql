@@ -1,5 +1,8 @@
 -- ============================================================
--- FRANSSEN KEUKENS — Supabase setup (run in SQL Editor)
+-- VEROUDERD — NIET MEER UITVOEREN
+-- Gebruik supabase_master_setup.sql (bevat correcte RLS-policies).
+-- Dit bestand heeft te losse policies: profiles_update USING(true)
+-- laat rol-escalatie toe. Bewaard enkel als referentie.
 -- ============================================================
 -- Stap 1: Voer dit script uit in Supabase → SQL Editor → New Query.
 -- Stap 2: Ga naar Authentication → Configuration → Email → zet

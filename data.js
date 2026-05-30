@@ -327,7 +327,7 @@ const FK_DATA = (() => {
       straat: "", huisnummer: "", postcode: "", stad: "",
       adviseur: "", showroom: "Geel", bron: "Web", offerteprijs: null,
       budget: null, materialen: "", volgende_actie: "", status: "Lead",
-      orderMaand: "", taken: [], bestanden: [], aangemaakt: new Date().toISOString(), logboek: [],
+      offerte_datum: "", orderMaand: "", taken: [], bestanden: [], aangemaakt: new Date().toISOString(), logboek: [],
       ...velden
     };
     _records = [nieuw, ..._records];
@@ -596,6 +596,25 @@ const FK_DATA = (() => {
       .toLocaleDateString("nl-BE", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
+  /* ── Offerte-opvolging ──────────────────────────────────── */
+  // Geeft aantal dagen since offerte_datum als status opvolging vraagt, anders null.
+  const isOfferteOpvolgen = (record) => {
+    const OPVOLG_STATUSSEN = ["Offerte", "Onderhandeling", "Showroombezoek"];
+    if (!OPVOLG_STATUSSEN.includes(record.status)) return null;
+    if (!record.offerte_datum) return null;
+    const dagen = Math.floor((Date.now() - new Date(record.offerte_datum)) / 86400000);
+    return dagen >= 7 ? dagen : null;
+  };
+
+  // Geeft aantal dagen sinds laatste activiteit (laatste logboek-entry of aangemaakt).
+  const dealLeeftijd = (record) => {
+    const log = record.logboek || [];
+    const laatste = log.length > 0
+      ? Math.max(...log.map(e => new Date(e.timestamp).getTime()))
+      : new Date(record.aangemaakt).getTime();
+    return Math.floor((Date.now() - laatste) / 86400000);
+  };
+
   /* ── Excel export ────────────────────────────────────────── */
   const exportExcel = (records) => {
     const XLSX = window.XLSX;
@@ -729,6 +748,7 @@ const FK_DATA = (() => {
     conversieRatio,
     // Datum
     isOvertijd, fmtDatum, fmtDatetime, fmtDate,
+    isOfferteOpvolgen, dealLeeftijd,
     // Excel
     exportExcel, importExcel,
     // Bestanden
